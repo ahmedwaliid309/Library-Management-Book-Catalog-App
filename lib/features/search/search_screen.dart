@@ -6,7 +6,7 @@ import 'package:raffi/core/widgets/book_card.dart';
 
 // المسؤول: أحمد وليد (حالة قبل البحث + حالة النتائج)
 class SearchScreen extends StatelessWidget {
-  const SearchScreen({super.key});
+  const SearchScreen({super.key, required String title});
 
   // حدود بدون خط، بزوايا مدورة (بدل InputBorder.none)
   OutlineInputBorder get _noBorder => OutlineInputBorder(
