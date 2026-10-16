@@ -3,7 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/theme/app_colors.dart';
 
-/// لوح الرف6
+/// لوح الرف
 
 class ShelfBoard extends StatelessWidget {
   const ShelfBoard({super.key, this.stripInset = 24});
@@ -16,7 +16,7 @@ class ShelfBoard extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // لوح الخشب: 10 ارتفاع، أطرافه التحتانية منحنية
+
         Container(
           height: 10.h,
           decoration: BoxDecoration(
@@ -27,7 +27,7 @@ class ShelfBoard extends StatelessWidget {
             ),
           ),
         ),
-        // الشريط الفاتح تحت اللوح: 6 ارتفاع
+        // الشريط الفاتح تحت اللوح
         Container(
           height: 6.h,
           margin: EdgeInsets.symmetric(horizontal: stripInset.w),
