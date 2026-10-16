@@ -21,14 +21,7 @@ class BookCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onFavoriteTap;
 
-static const _books = [
-  (title: 'عداء الطائرة الورقية', author: 'خالد حسيني', cover: 'assets/images/books/kite_runner.png'),
-  (title: 'قضية ست الحسن', author: 'اسم المؤلف', cover: 'assets/images/books/sit_alhasan.png'),
-  (title: 'جسمك يتذكر كل شيء', author: 'اسم المؤلف', cover: 'assets/images/books/body.png'),
-  (title: 'في ممر الفئران', author: 'أحمد خالد توفيق', cover: 'assets/images/books/fo2ran.png'),
-  (title: 'الأمير الصغير', author: 'اسم المؤلف', cover: 'assets/images/books/prince.png'),
-  (title: 'ممتلئ بالفراغ', author: 'اسم المؤلف', cover: 'assets/images/books/empty.png'),
-];
+
   @override
   Widget build(BuildContext context) {
     return InkWell(

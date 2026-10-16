@@ -14,6 +14,15 @@ class SearchScreen extends StatelessWidget {
     borderSide: BorderSide.none,
   );
 
+static const _books = [
+  (title: 'عداء الطائرة الورقية', author: 'خالد حسيني', cover: 'assets/images/kite_runner.png'),
+  (title: 'قضية ست الحسن', author: 'ميرنا المهدي', cover: 'assets/images/sit_alhasan.png'),
+  (title: 'جسمك يتذكر كل شيء', author: 'د.بيسيل فان دير كولك', cover: 'assets/images/body.png'),
+  (title: 'في ممر الفئران', author: 'أحمد خالد توفيق', cover: 'assets/images/fo2ran.png'),
+  (title: 'الأمير الصغير', author: 'انطوان دو سانت إكزوبيري', cover: 'assets/images/prince.png'),
+  (title: 'ممتلئ بالفراغ', author: 'د.عماد عثمان', cover: 'assets/images/empty.png'),
+];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -122,25 +131,6 @@ class SearchScreen extends StatelessWidget {
                 ],
               ),
               SizedBox(height: 24.h),
-
-              // صف العنوان
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'آخر ما تصفحت',
-                    style: TextStyle(
-                      fontFamily: AppTheme.fontFamily,
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  TextButton(onPressed: () {}, child: const Text('العودة')),
-                ],
-              ),
-              SizedBox(height: 12.h),
-
               // الشبكة
               Expanded(
                 child: GridView.builder(
