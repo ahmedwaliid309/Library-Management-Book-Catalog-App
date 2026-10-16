@@ -3,9 +3,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/router/app_router.dart';
 import 'data/favorite_book.dart';
-
+import 'widgets/favorites_count_card.dart';
 import 'widgets/favorites_empty_state.dart';
-
+import 'widgets/favorites_header.dart';
 import 'widgets/favorites_shelf.dart';
 
 // المسؤول: السيد (حالة فاضية + حالة فيها كتب)
@@ -17,10 +17,10 @@ class FavoritesScreen extends StatefulWidget {
 }
 
 class _FavoritesScreenState extends State<FavoritesScreen> {
-  // بيانات تجريبية. في مرحلة اللوجيك هتتبدل بالمفضلة الحقيقية.
+  // بيانات تجريبية
   List<FavoriteBook> _books = sampleFavoriteBooks;
 
-  // للمراجعة بس: زر الفلتر بيبدّل بين حالة الكتب والحالة الفاضية.
+  // للمراجعة بس: زر الفلتر
   // TODO(logic): يتشال ويتبدل بفلتر حقيقي.
   void _toggleDemoState() {
     setState(() {
@@ -31,11 +31,13 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // الـ Bottom Nav موجود في MainShell، فمش بنكرره هنا.
+
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
+            FavoritesHeader(onFilterTap: _toggleDemoState),
+            FavoritesCountCard(count: _books.length),
             Expanded(
               child: _books.isEmpty
                   ? FavoritesEmptyState(
