@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:raffi/core/theme/app_colors.dart';
 import 'package:raffi/core/theme/app_theme.dart';
+import 'package:raffi/core/widgets/book_card.dart';
 
 // المسؤول: أحمد وليد (حالة قبل البحث + حالة النتائج)
 class SearchScreen extends StatelessWidget {
@@ -118,8 +119,47 @@ class SearchScreen extends StatelessWidget {
                     ),
                     onPressed: () {},
                   ),
-                  
                 ],
+              ),
+              SizedBox(height: 24.h),
+
+              // صف العنوان
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'آخر ما تصفحت',
+                    style: TextStyle(
+                      fontFamily: AppTheme.fontFamily,
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  TextButton(onPressed: () {}, child: const Text('العودة')),
+                ],
+              ),
+              SizedBox(height: 12.h),
+
+              // الشبكة
+              Expanded(
+                child: GridView.builder(
+                  itemCount: _books.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 16.w,
+                    mainAxisSpacing: 16.h,
+                    childAspectRatio: 0.55,
+                  ),
+                  itemBuilder: (context, index) {
+                    final book = _books[index];
+                    return BookCard(
+                      title: book.title,
+                      author: book.author,
+                      coverAsset: book.cover,
+                    );
+                  },
+                ),
               ),
             ],
           ),
