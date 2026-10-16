@@ -13,21 +13,19 @@ class FavoriteBook {
     this.coverAsset,
   });
 
-  /// بيتبعت لـ AppRoutes.bookPath(id) لما المستخدم يضغط على الكتاب.
   final String id;
   final String title;
   final String author;
 
-  /// الغلاف المؤقت (لون + عنوان) لحد ما صور الأغلفة تتضاف.
+
   final Color coverColor;
   final Color coverTextColor;
 
-  /// مسار صورة الغلاف، مثال: 'assets/covers/little_prince.jpg'.
-  /// لازم تتسجل في pubspec.yaml. لو null أو مش موجودة بيظهر الغلاف الملوّن.
+
   final String? coverAsset;
 }
 
-/// بيانات تجريبية ثابتة (مفيش API دلوقتي).
+
 const List<FavoriteBook> sampleFavoriteBooks = [
   FavoriteBook(
     id: '1',
