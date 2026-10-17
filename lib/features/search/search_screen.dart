@@ -1,63 +1,33 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:raffi/core/theme/app_colors.dart';
 import 'package:raffi/core/theme/app_theme.dart';
 import 'package:raffi/core/widgets/book_card.dart';
+import 'package:go_router/go_router.dart';
+import 'package:raffi/core/router/app_router.dart';
+import 'package:raffi/data/book_section.dart';
+import 'package:raffi/data/mock_books.dart';
 
 // المسؤول: أحمد وليد (حالة قبل البحث + حالة النتائج)
 class SearchScreen extends StatelessWidget {
-  const SearchScreen({super.key, required String title});
+  const SearchScreen({super.key, this.section = BookSection.recent});
 
   // حدود بدون خط بزوايا مدورة
   OutlineInputBorder get _noBorder => OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12.r),
-        borderSide: BorderSide.none,
-      );
+    borderRadius: BorderRadius.circular(12.r),
+    borderSide: BorderSide.none,
+  );
 
-  static const _books = [
-    (
-      title: 'عداء الطائرة الورقية',
-      author: 'خالد حسيني',
-      cover: 'assets/images/kite_runner.png'
-    ),
-    (
-      title: 'قضية ست الحسن',
-      author: 'ميرنا المهدي',
-      cover: 'assets/images/sit_alhasan.png'
-    ),
-    (
-      title: 'جسمك يتذكر كل شيء',
-      author: 'د.بيسيل فان دير كولك',
-      cover: 'assets/images/body.png'
-    ),
-    (
-      title: 'في ممر الفئران',
-      author: 'أحمد خالد توفيق',
-      cover: 'assets/images/fo2ran.png'
-    ),
-    (
-      title: 'الأمير الصغير',
-      author: 'انطوان دو سانت إكزوبيري',
-      cover: 'assets/images/prince.png'
-    ),
-    (
-      title: 'ممتلئ بالفراغ',
-      author: 'د.عماد عثمان',
-      cover: 'assets/images/empty.png'
-    ),
-  ];
+  final BookSection section;
 
   @override
   Widget build(BuildContext context) {
+    final books = MockBooks.forSection(section);
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: 25.w,
-            vertical: 24.h,
-          ),
+          padding: EdgeInsets.symmetric(horizontal: 25.w, vertical: 24.h),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -138,7 +108,7 @@ class SearchScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'آخر ما تصفحت',
+                    section.title,
                     style: TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 20.sp,
@@ -147,7 +117,8 @@ class SearchScreen extends StatelessWidget {
                     ),
                   ),
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () => context.pop(),
+
                     child: Text(
                       'العودة',
                       style: TextStyle(
@@ -166,21 +137,20 @@ class SearchScreen extends StatelessWidget {
               // شبكة الكتب
               Expanded(
                 child: GridView.builder(
-                  itemCount: _books.length,
-                  gridDelegate:
-                      SliverGridDelegateWithFixedCrossAxisCount(
+                  itemCount: books.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
                     crossAxisSpacing: 16.w,
                     mainAxisSpacing: 16.h,
                     childAspectRatio: 0.55,
                   ),
                   itemBuilder: (context, index) {
-                    final book = _books[index];
-
+                    final book = books[index];
                     return BookCard(
                       title: book.title,
                       author: book.author,
-                      coverAsset: book.cover,
+                      coverAsset: book.coverAsset,
+                      onTap: () => context.push(AppRoutes.bookPath(book.id)),
                     );
                   },
                 ),

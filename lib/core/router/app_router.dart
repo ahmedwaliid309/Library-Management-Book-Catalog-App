@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:raffi/data/book_section.dart';
 
 import '../../features/about/about_screen.dart';
 import '../../features/book_details/book_details_screen.dart';
@@ -72,8 +73,11 @@ class AppRouter {
                 builder: (context, state) => const HomeScreen(),
                 routes: [
                   GoRoute(
-                    path: 'search', 
-                    builder: (context, state) => const SearchScreen(title: 'آخر ما تصفحت',),
+                    path: 'search',
+                    builder: (context, state) => SearchScreen(
+                      section:
+                          state.extra as BookSection? ?? BookSection.recent,
+                    ),
                   ),
                 ],
               ),
