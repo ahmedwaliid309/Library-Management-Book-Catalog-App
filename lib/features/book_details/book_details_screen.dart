@@ -7,8 +7,6 @@ import '../../core/widgets/placeholder_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 
-
-// المسؤول: إيمان
 class BookDetailsScreen extends StatefulWidget {
   const BookDetailsScreen({super.key, required this.bookId});
 
@@ -21,9 +19,12 @@ class BookDetailsScreen extends StatefulWidget {
 class _BookDetailsScreenState extends State<BookDetailsScreen> {
 
   bool isSelected = false;
-  bool bookSelected = false;
-  bool bookSelected1 = false;
-  bool bookSelected2 = false;
+  int selectedBookStatus = -1;
+  List<String> buttons = [
+    'أريد قراءته',
+    'أقرأ حاليا',
+    'مكتمل',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -449,7 +450,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                                       GestureDetector(
                                         onTap: () {
                                           setState(() {
-                                            bookSelected = !bookSelected;
+                                            selectedBookStatus = 0;
                                           });
                                         },
                                         child: Container(
@@ -457,10 +458,10 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                                           height: 60.h,
                                           padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 6),
                                           decoration: BoxDecoration(
-                                              color: bookSelected
+                                              color: selectedBookStatus == 0
                                                   ? Color(0xFFF4E2D4)
                                                   : Color(0xFFF6EFE1),
-                                              border: bookSelected
+                                              border: selectedBookStatus == 0
                                                   ? Border.all(
                                                 color: Color(0x3DBF6428).withValues(alpha: 0.53),
                                               )
@@ -470,7 +471,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                                           child: Column(
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
-                                              Icon(Icons.bookmark_border,color: bookSelected
+                                              Icon(Icons.bookmark_border,color: selectedBookStatus == 0
                                                   ? AppColors.primary
                                                   :AppColors.textSecondary,),
                                               SizedBox(height: 2.h,),
@@ -478,7 +479,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                                                 'أريد قراءته',
                                                 textAlign: TextAlign.center,
                                                 style: TextStyle(
-                                                  color: bookSelected
+                                                  color: selectedBookStatus == 0
                                                       ? AppColors.primary
                                                       :AppColors.textSecondary,
                                                   fontSize: 10,
@@ -493,7 +494,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                                       GestureDetector(
                                         onTap: () {
                                           setState(() {
-                                            bookSelected1 = !bookSelected1;
+                                            selectedBookStatus = 1;
                                           });
                                         },
                                         child: Container(
@@ -501,10 +502,10 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                                           height: 60.h,
                                           padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 6),
                                           decoration: BoxDecoration(
-                                              color: bookSelected1
+                                              color: selectedBookStatus == 1
                                                   ? Color(0xFFF4E2D4)
                                                   : Color(0xFFF6EFE1),
-                                              border: bookSelected1
+                                              border: selectedBookStatus == 1
                                                   ? Border.all(
                                                 color: Color(0x3DBF6428).withValues(alpha: 0.53),
                                               )
@@ -514,7 +515,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                                           child: Column(
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
-                                              Icon(Icons.menu_book_outlined,color: bookSelected1
+                                              Icon(Icons.menu_book_outlined,color: selectedBookStatus == 1
                                                 ? AppColors.primary
                                                 :AppColors.textSecondary,),
                                               SizedBox(height: 2.h,),
@@ -522,7 +523,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                                                 'أقرأ حالياً',
                                                 textAlign: TextAlign.center,
                                                 style: TextStyle(
-                                                  color: bookSelected1
+                                                  color: selectedBookStatus == 1
                                                       ? AppColors.primary
                                                       :AppColors.textSecondary,
                                                   fontSize: 10,
@@ -537,7 +538,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                                       GestureDetector(
                                         onTap: () {
                                           setState(() {
-                                            bookSelected2 = !bookSelected2;
+                                            selectedBookStatus = 2;
                                           });
                                         },
                                         child: Container(
@@ -545,10 +546,10 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                                           height: 60.h,
                                           padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 6),
                                           decoration: BoxDecoration(
-                                              color: bookSelected2
+                                              color: selectedBookStatus == 2
                                                   ? Color(0xFFF4E2D4)
                                                   : Color(0xFFF6EFE1),
-                                              border: bookSelected2
+                                              border: selectedBookStatus == 2
                                                   ? Border.all(
                                                 color: Color(0x3DBF6428).withValues(alpha: 0.53),
                                               )
@@ -558,7 +559,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                                           child: Column(
                                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                             children: [
-                                              Icon(Icons.check_rounded,color: bookSelected2
+                                              Icon(Icons.check_rounded,color: selectedBookStatus == 2
                                                   ? AppColors.primary
                                                   :AppColors.textSecondary,),
                                               SizedBox(height: 2.h,),
@@ -566,7 +567,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                                                 'مكتمل',
                                                 textAlign: TextAlign.center,
                                                 style: TextStyle(
-                                                  color: bookSelected2
+                                                  color: selectedBookStatus == 2
                                                       ? AppColors.primary
                                                       :AppColors.textSecondary,
                                                   fontSize: 10,
@@ -581,7 +582,8 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                                     ],
                                   ),
                                   SizedBox(height: 12.h,),
-                                  ElevatedButton(onPressed: (){},
+                                  ElevatedButton(
+                                      onPressed: () => context.go(AppRoutes.library),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         mainAxisAlignment: MainAxisAlignment.center,
@@ -626,7 +628,3 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
       )));
   }
 }
-
-// PlaceholderScreen(
-// title: 'تفاصيل الكتاب (#$bookId)',
-// owner: 'إيمان',
