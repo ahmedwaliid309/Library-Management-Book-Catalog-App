@@ -68,6 +68,7 @@ class AppRouter {
         branches: [
           StatefulShellBranch(
             routes: [
+              // 0 الرئيسية
               GoRoute(
                 path: AppRoutes.home,
                 builder: (context, state) => const HomeScreen(),
@@ -85,6 +86,16 @@ class AppRouter {
           ),
           StatefulShellBranch(
             routes: [
+              // 1 مكتبتي
+              GoRoute(
+                path: AppRoutes.library,
+                builder: (context, state) => const LibraryScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              // 2 المفضلة
               GoRoute(
                 path: AppRoutes.favorites,
                 builder: (context, state) => const FavoritesScreen(),
@@ -93,6 +104,7 @@ class AppRouter {
           ),
           StatefulShellBranch(
             routes: [
+              // 3 عن التطبيق
               GoRoute(
                 path: AppRoutes.about,
                 builder: (context, state) => const AboutScreen(),
