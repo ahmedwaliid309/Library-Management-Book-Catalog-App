@@ -66,6 +66,32 @@ class AppRouter {
         builder: (context, state, navigationShell) =>
             MainShell(navigationShell: navigationShell),
         branches: [
+<<<<<<< HEAD
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: AppRoutes.home,
+              builder: (context, state) => const home_screen(),
+            ),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: AppRoutes.library,
+              builder: (context, state) => const LibraryScreen(),
+            ),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: AppRoutes.favorites,
+              builder: (context, state) => const FavoritesScreen(),
+            ),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(
+              path: AppRoutes.about,
+              builder: (context, state) => const AboutScreen(),
+            ),
+          ]),
+=======
           StatefulShellBranch(
             routes: [
               // 0 الرئيسية
@@ -111,6 +137,7 @@ class AppRouter {
               ),
             ],
           ),
+>>>>>>> origin/develop
         ],
       ),
     ],

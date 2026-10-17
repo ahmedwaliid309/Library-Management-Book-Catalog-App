@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
+import 'features/home/home_screen.dart';
+void main() {
+  runApp(const MyApp());
+=======
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:raffi/data/book_repository.dart';
@@ -14,34 +19,24 @@ void main() {
       child: const RaffiApp(),
     ),
   );
+>>>>>>> origin/develop
 }
-
-class RaffiApp extends StatelessWidget {
-  const RaffiApp({super.key});
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
 
   @override
+  State<MyApp> createState() => _State();
+}
+
+class _State extends State<MyApp> {
+  @override
   Widget build(BuildContext context) {
-    return ScreenUtilInit(
-      // حجم الـ Frame في Figma. غيّره لو الفريمات عندكم بحجم مختلف.
-      designSize: const Size(390, 844),
-      minTextAdapt: true,
-      splitScreenMode: true,
-      builder: (context, child) {
-        return MaterialApp.router(
-          title: 'رفّي',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.light,
-          // التطبيق عربي RTL في كل الشاشات
-          locale: const Locale('ar'),
-          supportedLocales: const [Locale('ar')],
-          localizationsDelegates: const [
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          routerConfig: AppRouter.router,
-        );
-      },
+    return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(colorScheme:  ColorScheme.fromSeed(seedColor: Color(0xffFCF8EE)),
+          scaffoldBackgroundColor: Colors.white,
+        ),
+        home: const home_screen()
     );
   }
 }
