@@ -68,7 +68,7 @@ class AppRouter {
           StatefulShellBranch(routes: [
             GoRoute(
               path: AppRoutes.home,
-              builder: (context, state) => const HomeScreen(),
+              builder: (context, state) => const home_screen(),
             ),
           ]),
           StatefulShellBranch(routes: [
