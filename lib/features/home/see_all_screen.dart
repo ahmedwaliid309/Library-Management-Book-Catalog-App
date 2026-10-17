@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/widgets/placeholder_screen.dart';
 
-// المسؤول: معاذ (شبكة "آخر ما تصفحت")
+// المسؤول: معاذ (شبكة "آخر ما تصف
 class SeeAllScreen extends StatelessWidget {
   const SeeAllScreen({super.key});
 

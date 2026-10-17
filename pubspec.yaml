@@ -41,6 +41,7 @@ dependencies:
   cached_network_image: ^4.0.4
   flutter_localizations:
     sdk: flutter
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:
