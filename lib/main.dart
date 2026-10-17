@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:raffi/data/book_repository.dart';
+import 'package:provider/provider.dart';
 
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 
 void main() {
-  runApp(const RaffiApp());
+  runApp(
+    Provider<BookRepository>(
+      create: (_) => BookRepository(),
+      child: const RaffiApp(),
+    ),
+  );
 }
 
 class RaffiApp extends StatelessWidget {

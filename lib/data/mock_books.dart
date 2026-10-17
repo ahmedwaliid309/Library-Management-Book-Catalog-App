@@ -1,5 +1,3 @@
-import 'package:raffi/data/models/book_section.dart';
-
 import 'book_section.dart';
 import 'models/book.dart';
 
@@ -69,7 +67,7 @@ class MockBooks {
     ),
   ];
 
-  // كل قسم بيجيب كتب مختلفة (بالـ id). غيّرهم لما تزودوا كتب.
+  // كل قسم بيجيب كتب مختلفة (بالـ id)
   static List<Book> get recent => _pick(['1', '2', '3', '4', '5', '6']);
   static List<Book> get recommended => _pick(['5', '6', '4', '1']);
 

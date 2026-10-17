@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:raffi/core/theme/app_colors.dart';
@@ -16,11 +17,10 @@ class BookCard extends StatelessWidget {
 
   final String title;
   final String author;
-  final String? coverAsset; // مسار الغلاف في assets
+  final String? coverAsset; // مسار asset أو رابط https
   final bool isFavorite;
   final VoidCallback? onTap;
   final VoidCallback? onFavoriteTap;
-
 
   @override
   Widget build(BuildContext context) {
@@ -30,7 +30,6 @@ class BookCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // الغلاف بنسبة 2:3 والقلب فوقه
           AspectRatio(
             aspectRatio: 2 / 3,
             child: Stack(
@@ -40,7 +39,6 @@ class BookCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8.r),
                   child: _cover(),
                 ),
-                // start = اليمين في RTL
                 PositionedDirectional(
                   top: 8.h,
                   start: 8.w,
@@ -92,15 +90,27 @@ class BookCard extends StatelessWidget {
     );
   }
 
-  // لو الصورة مش موجودة يظهر مربع بديل بدل ما التطبيق يقع
+  // رابط إنترنت أو asset أو مربع بديل لو مفيش غلاف
   Widget _cover() {
     final placeholder = Container(
       color: AppColors.chip,
       child: Icon(Icons.menu_book, color: AppColors.textSecondary, size: 32.sp),
     );
-    if (coverAsset == null) return placeholder;
+
+    final cover = coverAsset;
+    if (cover == null || cover.isEmpty) return placeholder;
+
+    if (cover.startsWith('http')) {
+      return CachedNetworkImage(
+        imageUrl: cover,
+        fit: BoxFit.cover,
+        placeholder: (_, __) => placeholder,
+        errorWidget: (_, __, ___) => placeholder,
+      );
+    }
+
     return Image.asset(
-      coverAsset!,
+      cover,
       fit: BoxFit.cover,
       errorBuilder: (_, __, ___) => placeholder,
     );
