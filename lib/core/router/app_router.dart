@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:raffi/data/book_section.dart';
 
 import '../../features/about/about_screen.dart';
 import '../../features/book_details/book_details_screen.dart';
@@ -23,7 +24,7 @@ class AppRoutes {
   static const library = '/library';
   static const favorites = '/favorites';
   static const about = '/about';
-  static const search = '/search';
+  static const search = '/home/search';
   static const seeAll = '/see-all';
   static const bookDetails = '/book/:id';
 
@@ -45,11 +46,11 @@ class AppRouter {
         builder: (context, state) => const OnboardingScreen(),
       ),
 
-      // شاشات برا الـ Bottom Nav
-      GoRoute(
-        path: AppRoutes.search,
-        builder: (context, state) => const SearchScreen(),
-      ),
+      // // شاشات برا الـ Bottom Nav
+      // GoRoute(
+      //   path: AppRoutes.search,
+      //   builder: (context, state) => const SearchScreen(),
+      // ),
       GoRoute(
         path: AppRoutes.seeAll,
         builder: (context, state) => const SeeAllScreen(),
@@ -65,30 +66,39 @@ class AppRouter {
         builder: (context, state, navigationShell) =>
             MainShell(navigationShell: navigationShell),
         branches: [
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: AppRoutes.home,
-              builder: (context, state) => const HomeScreen(),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: AppRoutes.library,
-              builder: (context, state) => const LibraryScreen(),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: AppRoutes.favorites,
-              builder: (context, state) => const FavoritesScreen(),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: AppRoutes.about,
-              builder: (context, state) => const AboutScreen(),
-            ),
-          ]),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.home,
+                builder: (context, state) => const HomeScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'search',
+                    builder: (context, state) => SearchScreen(
+                      section:
+                          state.extra as BookSection? ?? BookSection.recent,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.favorites,
+                builder: (context, state) => const FavoritesScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.about,
+                builder: (context, state) => const AboutScreen(),
+              ),
+            ],
+          ),
         ],
       ),
     ],
