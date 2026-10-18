@@ -1,8 +1,9 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:raffi/data/models/book.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../data/favorite_book.dart';
 import 'shelf_board.dart';
 
 /// الكتب على رفوف، كل رف فيه 3 كتب.
@@ -13,14 +14,14 @@ class FavoritesShelf extends StatelessWidget {
     required this.onBookTap,
   });
 
-  final List<FavoriteBook> books;
-  final ValueChanged<FavoriteBook> onBookTap;
+  final List<Book> books;
+  final ValueChanged<Book> onBookTap;
 
   static const int perShelf = 3;
 
   @override
   Widget build(BuildContext context) {
-    final rows = <List<FavoriteBook>>[];
+    final rows = <List<Book>>[];
     for (var i = 0; i < books.length; i += perShelf) {
       final end = i + perShelf > books.length ? books.length : i + perShelf;
       rows.add(books.sublist(i, end));
@@ -38,8 +39,8 @@ class FavoritesShelf extends StatelessWidget {
 class _ShelfRow extends StatelessWidget {
   const _ShelfRow({required this.books, required this.onBookTap});
 
-  final List<FavoriteBook> books;
-  final ValueChanged<FavoriteBook> onBookTap;
+  final List<Book> books;
+  final ValueChanged<Book> onBookTap;
 
   Widget _slot(Widget? child) => Expanded(
     child: Padding(
@@ -84,7 +85,7 @@ class _ShelfRow extends StatelessWidget {
 class _BookCaption extends StatelessWidget {
   const _BookCaption({required this.book});
 
-  final FavoriteBook book;
+  final Book book;
 
   @override
   Widget build(BuildContext context) {
@@ -119,29 +120,43 @@ class _BookCaption extends StatelessWidget {
 class _BookCover extends StatelessWidget {
   const _BookCover({required this.book, required this.onTap});
 
-  final FavoriteBook book;
+  final Book book;
   final VoidCallback onTap;
 
+  // مربع بديل لو مفيش غلاف أو فشل التحميل
   Widget _placeholder() => Container(
-    color: book.coverColor,
+    color: AppColors.chip,
     alignment: Alignment.center,
     padding: EdgeInsets.all(6.w),
     child: Text(
       book.title,
       textAlign: TextAlign.center,
+      maxLines: 4,
+      overflow: TextOverflow.ellipsis,
       style: TextStyle(
         fontSize: 14.sp,
         fontWeight: FontWeight.w800,
-        color: book.coverTextColor,
+        color: AppColors.textPrimary,
       ),
     ),
   );
 
+  // رابط إنترنت أو asset أو بديل
   Widget _cover() {
-    final asset = book.coverAsset;
-    if (asset == null) return _placeholder();
+    final cover = book.coverAsset;
+    if (cover.isEmpty) return _placeholder();
+
+    if (cover.startsWith('http')) {
+      return CachedNetworkImage(
+        imageUrl: cover,
+        fit: BoxFit.cover,
+        placeholder: (_, __) => _placeholder(),
+        errorWidget: (_, __, ___) => _placeholder(),
+      );
+    }
+
     return Image.asset(
-      asset,
+      cover,
       fit: BoxFit.cover,
       errorBuilder: (_, __, ___) => _placeholder(),
     );
@@ -157,7 +172,7 @@ class _BookCover extends StatelessWidget {
         aspectRatio: 0.68,
         child: Stack(
           children: [
-            // ظهر الكتاب
+            // ظهر الكتاب: طبقة غامقة ورا الغلاف، بتظهر على اليمين
             Positioned.fill(
               child: DecoratedBox(
                 decoration: BoxDecoration(
@@ -173,7 +188,7 @@ class _BookCover extends StatelessWidget {
                 ),
               ),
             ),
-            // الغلاف
+            // الغلاف نفسه (start = اليمين في RTL، فبنسيب مكان لظهر الكتاب)
             PositionedDirectional(
               top: 0,
               bottom: 0,
@@ -185,7 +200,7 @@ class _BookCover extends StatelessWidget {
                 child: _cover(),
               ),
             ),
-            // القلب
+            // القلب: دايرة بيضا بهالة خفيفة وقلب أحمر غامق
             PositionedDirectional(
               top: 4.h,
               start: 8.w,
