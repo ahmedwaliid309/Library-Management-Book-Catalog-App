@@ -6,11 +6,16 @@ import 'package:provider/provider.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'data/book_repository.dart';
+import 'features/favorites/favorites_provider.dart'; // مؤقت للتجربة
 
 void main() {
   runApp(
-    Provider<BookRepository>(
-      create: (_) => BookRepository(),
+    MultiProvider(
+      providers: [
+        Provider<BookRepository>(create: (_) => BookRepository()),
+        // مؤقت للتجربة: الـ lead هو اللي هيضيفه رسمي
+        ChangeNotifierProvider(create: (_) => FavoritesProvider()),
+      ],
       child: const RaffiApp(),
     ),
   );
