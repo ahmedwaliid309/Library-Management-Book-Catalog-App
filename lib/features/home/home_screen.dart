@@ -1,13 +1,16 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../core/router/app_router.dart';
-import '../../core/theme/app_theme.dart';
-import 'see_all_screen.dart';
-import '../../core/theme/app_colors.dart';
-import 'dart:ui';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
 import 'package:raffi/core/router/app_router.dart';
+import 'package:raffi/core/theme/app_colors.dart';
+import 'package:raffi/core/theme/app_theme.dart';
 import 'package:raffi/data/book_section.dart';
+import 'package:raffi/data/mock_books.dart';
+import 'package:raffi/features/favorites/favorites_provider.dart';
 
 class home_screen extends StatefulWidget {
   const home_screen({super.key});
@@ -17,10 +20,36 @@ class home_screen extends StatefulWidget {
 }
 
 class _home_screenState extends State<home_screen> {
-  final Set<int> favoriteBooks = {};
+  final List<String> Types = [
+    'الكل',
+    'رواية',
+    'رومانسي',
+    'غموض',
+    'فانتازيا',
+    'تطوير ذات',
+    'تكنولوجيا',
+  ];
 
-  Widget bookImage(String imagePath, int bookId) {
-    final bool isFavorite = favoriteBooks.contains(bookId);
+  int currentIndex = 0;
+  int currentReadingStatus = 0;
+
+  final List<String> readingTypes = [
+    'الكل',
+    'أريد قراءته',
+    'أقرأ حالياً',
+    'مكتمل',
+  ];
+
+  // ربط صورة الكتاب ببياناته في MockBooks والمفضلة المشتركة.
+  Widget bookImage(String imagePath, String bookId) {
+    final book = MockBooks.byId(bookId);
+
+    if (book == null) {
+      return const SizedBox.shrink();
+    }
+
+    final isFavorite =
+    context.watch<FavoritesProvider>().isFavorite(book.id);
 
     return SizedBox(
       height: 150,
@@ -45,13 +74,7 @@ class _home_screenState extends State<home_screen> {
                 padding: EdgeInsets.zero,
                 iconSize: 21,
                 onPressed: () {
-                  setState(() {
-                    if (isFavorite) {
-                      favoriteBooks.remove(bookId);
-                    } else {
-                      favoriteBooks.add(bookId);
-                    }
-                  });
+                  context.read<FavoritesProvider>().toggle(book);
                 },
                 icon: Icon(
                   isFavorite ? Icons.favorite : Icons.favorite_border,
@@ -64,34 +87,13 @@ class _home_screenState extends State<home_screen> {
       ),
     );
   }
-  List<String> Types = [
-    'الكل',
-    'رواية',
-    'رومانسي',
-    'غموض',
-    'فانتازيا',
-    'تطوير ذات',
-    'تكنولوجيا',
-  ];
-
-  int currentIndex = 0;
-  int currentReadingStatus = 0;
-
-  final List<String> readingTypes = [
-    'الكل',
-    'أريد قراءته',
-    'أقرأ حالياً',
-    'مكتمل',
-  ];
 
   ButtonStyle filterButtonStyle(bool isSelected) {
     return ElevatedButton.styleFrom(
-      backgroundColor: isSelected
-          ? const Color(0xFFC46627)
-          : Colors.white,
-      foregroundColor: isSelected
-          ? Colors.white
-          : const Color(0xFF49372D),
+      backgroundColor:
+      isSelected ? const Color(0xFFC46627) : Colors.white,
+      foregroundColor:
+      isSelected ? Colors.white : const Color(0xFF49372D),
       elevation: 0,
       padding: const EdgeInsets.symmetric(
         horizontal: 14,
@@ -145,13 +147,11 @@ class _home_screenState extends State<home_screen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 6),
-
                 Align(
                   alignment: Alignment.topRight,
                   child: Padding(
-                    padding: EdgeInsets.only(right: 16),
+                    padding: const EdgeInsets.only(right: 16),
                     child: Text(
                       'جاهز تكتشف كتابك الجاي؟',
                       textAlign: TextAlign.right,
@@ -164,9 +164,9 @@ class _home_screenState extends State<home_screen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 15),
 
+                // البحث والفلتر
                 Row(
                   children: [
                     Expanded(
@@ -187,7 +187,6 @@ class _home_screenState extends State<home_screen> {
                         ),
                       ),
                     ),
-
                     Padding(
                       padding: const EdgeInsets.only(left: 10),
                       child: Container(
@@ -205,9 +204,10 @@ class _home_screenState extends State<home_screen> {
                             showModalBottomSheet(
                               context: context,
                               backgroundColor: Colors.transparent,
-                              barrierColor: Colors.black.withOpacity(0.25),
+                              barrierColor:
+                              Colors.black.withOpacity(0.25),
                               isScrollControlled: true,
-                              builder: (context) {
+                              builder: (sheetContext) {
                                 int selectedType = currentIndex;
                                 int selectedReadingStatus = 0;
 
@@ -243,7 +243,6 @@ class _home_screenState extends State<home_screen> {
                                                   CrossAxisAlignment
                                                       .stretch,
                                                   children: [
-                                                    // الخط العلوي
                                                     Center(
                                                       child: Container(
                                                         height: 5,
@@ -259,9 +258,9 @@ class _home_screenState extends State<home_screen> {
                                                         ),
                                                       ),
                                                     ),
-
-                                                    const SizedBox(height: 20),
-
+                                                    const SizedBox(
+                                                      height: 20,
+                                                    ),
                                                     Row(
                                                       textDirection:
                                                       TextDirection.rtl,
@@ -309,19 +308,16 @@ class _home_screenState extends State<home_screen> {
                                                             ],
                                                           ),
                                                         ),
-
                                                         const SizedBox(
                                                           width: 16,
                                                         ),
-
-
                                                         SizedBox(
                                                           width: 60,
                                                           height: 60,
                                                           child: OutlinedButton(
                                                             onPressed: () =>
                                                                 Navigator.pop(
-                                                                  context,
+                                                                  sheetContext,
                                                                 ),
                                                             style:
                                                             OutlinedButton
@@ -346,29 +342,27 @@ class _home_screenState extends State<home_screen> {
                                                                 ),
                                                               ),
                                                             ),
-                                                            child: const Center(
-                                                              child: Icon(
-                                                                Icons.close,
-                                                                color: Color(
-                                                                  0xFF49372D,
-                                                                ),
-                                                                size: 18,
+                                                            child: const Icon(
+                                                              Icons.close,
+                                                              color: Color(
+                                                                0xFF49372D,
                                                               ),
+                                                              size: 18,
                                                             ),
                                                           ),
                                                         ),
                                                       ],
                                                     ),
-
-                                                    const SizedBox(height: 36),
-
+                                                    const SizedBox(
+                                                      height: 36,
+                                                    ),
                                                     Text(
                                                       'التصنيف',
                                                       textAlign:
                                                       TextAlign.right,
                                                       style: TextStyle(
-                                                        fontFamily: AppTheme
-                                                            .fontFamily,
+                                                        fontFamily:
+                                                        AppTheme.fontFamily,
                                                         fontSize: 20,
                                                         fontWeight:
                                                         FontWeight.bold,
@@ -376,9 +370,9 @@ class _home_screenState extends State<home_screen> {
                                                             .textPrimary,
                                                       ),
                                                     ),
-
-                                                    const SizedBox(height: 16),
-
+                                                    const SizedBox(
+                                                      height: 16,
+                                                    ),
                                                     Wrap(
                                                       textDirection:
                                                       TextDirection.rtl,
@@ -387,7 +381,7 @@ class _home_screenState extends State<home_screen> {
                                                       children: List.generate(
                                                         Types.length,
                                                             (index) {
-                                                          final isSelected =
+                                                          final selected =
                                                               selectedType ==
                                                                   index;
 
@@ -400,7 +394,7 @@ class _home_screenState extends State<home_screen> {
                                                             },
                                                             style:
                                                             filterButtonStyle(
-                                                              isSelected,
+                                                              selected,
                                                             ),
                                                             child: Text(
                                                               Types[index],
@@ -409,16 +403,16 @@ class _home_screenState extends State<home_screen> {
                                                         },
                                                       ),
                                                     ),
-
-                                                    const SizedBox(height: 36),
-
+                                                    const SizedBox(
+                                                      height: 36,
+                                                    ),
                                                     Text(
                                                       'حالة القراءة',
                                                       textAlign:
                                                       TextAlign.right,
                                                       style: TextStyle(
-                                                        fontFamily: AppTheme
-                                                            .fontFamily,
+                                                        fontFamily:
+                                                        AppTheme.fontFamily,
                                                         fontSize: 20,
                                                         fontWeight:
                                                         FontWeight.bold,
@@ -426,9 +420,9 @@ class _home_screenState extends State<home_screen> {
                                                             .textPrimary,
                                                       ),
                                                     ),
-
-                                                    const SizedBox(height: 16),
-
+                                                    const SizedBox(
+                                                      height: 16,
+                                                    ),
                                                     Wrap(
                                                       textDirection:
                                                       TextDirection.rtl,
@@ -437,7 +431,7 @@ class _home_screenState extends State<home_screen> {
                                                       children: List.generate(
                                                         readingTypes.length,
                                                             (index) {
-                                                          final isSelected =
+                                                          final selected =
                                                               selectedReadingStatus ==
                                                                   index;
 
@@ -450,7 +444,7 @@ class _home_screenState extends State<home_screen> {
                                                             },
                                                             style:
                                                             filterButtonStyle(
-                                                              isSelected,
+                                                              selected,
                                                             ),
                                                             child: Text(
                                                               readingTypes[
@@ -460,10 +454,9 @@ class _home_screenState extends State<home_screen> {
                                                         },
                                                       ),
                                                     ),
-
-                                                    const SizedBox(height: 40),
-
-                                                    // حفظ وإلغاء
+                                                    const SizedBox(
+                                                      height: 40,
+                                                    ),
                                                     Row(
                                                       textDirection:
                                                       TextDirection.rtl,
@@ -480,9 +473,8 @@ class _home_screenState extends State<home_screen> {
                                                                   currentReadingStatus =
                                                                       selectedReadingStatus;
                                                                 });
-
                                                                 Navigator.pop(
-                                                                  context,
+                                                                  sheetContext,
                                                                 );
                                                               },
                                                               style:
@@ -520,11 +512,9 @@ class _home_screenState extends State<home_screen> {
                                                             ),
                                                           ),
                                                         ),
-
                                                         const SizedBox(
                                                           width: 40,
                                                         ),
-
                                                         Expanded(
                                                           child: SizedBox(
                                                             height: 66,
@@ -532,7 +522,7 @@ class _home_screenState extends State<home_screen> {
                                                             OutlinedButton(
                                                               onPressed: () =>
                                                                   Navigator.pop(
-                                                                    context,
+                                                                    sheetContext,
                                                                   ),
                                                               style:
                                                               OutlinedButton
@@ -596,17 +586,18 @@ class _home_screenState extends State<home_screen> {
                   ],
                 ),
 
+                // البانر
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(
+                      gradient: const LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          const Color(0xFF74503B),
-                          const Color(0xFF2B1D15)
+                          Color(0xFF74503B),
+                          Color(0xFF2B1D15),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(20),
@@ -622,24 +613,20 @@ class _home_screenState extends State<home_screen> {
                           alignment: Alignment.topRight,
                           child: Text(
                             'مجموعتك تبدأ من هنا',
-                            textAlign: TextAlign.right,
                             style: TextStyle(
                               fontFamily: AppTheme.fontFamily,
                               fontSize: 14,
                               fontWeight: FontWeight.w400,
-                              color: Color(0xFFBF6428),
+                              color: const Color(0xFFBF6428),
                             ),
                           ),
                         ),
-
                         const SizedBox(height: 22),
-
                         Container(
                           margin: const EdgeInsets.only(right: 12),
                           alignment: Alignment.topRight,
                           child: Text(
                             'رحلتك مع القراءة تبدأ هنا',
-                            textAlign: TextAlign.right,
                             style: TextStyle(
                               fontFamily: AppTheme.fontFamily,
                               fontSize: 26,
@@ -647,14 +634,13 @@ class _home_screenState extends State<home_screen> {
                               color: Colors.white,
                             ),
                           ),
-                        ),const SizedBox(height: 6),
-
+                        ),
+                        const SizedBox(height: 6),
                         Container(
                           margin: const EdgeInsets.only(right: 12),
                           alignment: Alignment.topRight,
                           child: Text(
                             'اكتشف حكايتك القادمة',
-                            textAlign: TextAlign.right,
                             style: TextStyle(
                               fontFamily: AppTheme.fontFamily,
                               fontSize: 18,
@@ -663,7 +649,6 @@ class _home_screenState extends State<home_screen> {
                             ),
                           ),
                         ),
-
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
@@ -681,7 +666,7 @@ class _home_screenState extends State<home_screen> {
                                       vertical: 8,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xff0FCF8EE),
+                                      color: const Color(0xFF0FCF8E),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Text(
@@ -690,14 +675,13 @@ class _home_screenState extends State<home_screen> {
                                         fontFamily: AppTheme.fontFamily,
                                         fontSize: 14,
                                         fontWeight: FontWeight.bold,
-                                        color: Color(0xff02B1D15),
+                                        color: const Color(0xFF02B1D1),
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
                             ),
-
                             Padding(
                               padding: const EdgeInsets.only(
                                 left: 12,
@@ -714,15 +698,15 @@ class _home_screenState extends State<home_screen> {
                             ),
                           ],
                         ),
-
                         const SizedBox(height: 8),
                       ],
                     ),
                   ),
                 ),
 
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
 
+                // آخر ما تصفحت
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 18),
                   child: Row(
@@ -737,12 +721,12 @@ class _home_screenState extends State<home_screen> {
                           color: AppColors.textPrimary,
                         ),
                       ),
-
                       GestureDetector(
                         onTap: () {
-
-
-                          context.push(AppRoutes.search, extra: BookSection.recent);
+                          context.push(
+                            AppRoutes.search,
+                            extra: BookSection.recent,
+                          );
                         },
                         child: Text(
                           'عرض الكل',
@@ -758,20 +742,19 @@ class _home_screenState extends State<home_screen> {
                   ),
                 ),
 
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
 
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        bookImage('assets/images/Frame 22.png', 1),
-                        SizedBox(width: 18),
-                        bookImage('assets/images/black.png', 2),
-                        SizedBox(width: 18),
-                        bookImage('assets/images/satel7osn.png', 3),
+                        bookImage('assets/images/Frame 22.png', '1'),
+                        const SizedBox(width: 18),
+                        bookImage('assets/images/black.png', '4'),
+                        const SizedBox(width: 18),
+                        bookImage('assets/images/satel7osn.png', '2'),
                       ],
                     ),
                   ),
@@ -780,123 +763,28 @@ class _home_screenState extends State<home_screen> {
                 Container(
                   height: 10,
                   width: 332,
-                  child: Image.asset(
-                    'assets/images/roof2.png',
-                  ),
+                  child: Image.asset('assets/images/roof2.png'),
                 ),
 
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
 
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Text(
-                              'عدّاء الطائرة الورقية',
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontFamily,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            margin: const EdgeInsets.only(right: 8),
-                            alignment: Alignment.topRight,
-                            child: Text(
-                              'خالد حسيني',
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontFamily,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(width: 18),
-
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Text(
-                              'في ممر الفئران',
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontFamily,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            margin: const EdgeInsets.only(right: 8),
-                            alignment: Alignment.topRight,
-                            child: Text(
-                              'أحمد خالد توفيق',
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontFamily,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(width: 18),
-
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Text(
-                              'قضية ست الحسن',
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontFamily,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            margin: const EdgeInsets.only(right: 8),
-                            alignment: Alignment.topRight,
-                            child: Text(
-                              'ميرنا المهدي',
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontFamily,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                      _bookInfo('عدّاء الطائرة الورقية', 'خالد حسيني'),
+                      const SizedBox(width: 18),
+                      _bookInfo('في ممر الفئران', 'أحمد خالد توفيق'),
+                      const SizedBox(width: 18),
+                      _bookInfo('قضية ست الحسن', 'ميرنا المهدي'),
                     ],
                   ),
                 ),
 
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
 
+                // قد يعجبك
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 18),
                   child: Row(
@@ -911,10 +799,12 @@ class _home_screenState extends State<home_screen> {
                           color: AppColors.textPrimary,
                         ),
                       ),
-
                       GestureDetector(
                         onTap: () {
-                          context.push(AppRoutes.search, extra: BookSection.recommended);
+                          context.push(
+                            AppRoutes.search,
+                            extra: BookSection.recommended,
+                          );
                         },
                         child: Text(
                           'عرض الكل',
@@ -930,151 +820,86 @@ class _home_screenState extends State<home_screen> {
                   ),
                 ),
 
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
 
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        bookImage('assets/images/Frame 22.png', 4),
-                        SizedBox(width: 18),
-                        bookImage('assets/images/black.png', 5),
-                        SizedBox(width: 18),
-                        bookImage('assets/images/satel7osn.png', 6),
+                        bookImage('assets/images/Frame 22.png', '1'),
+                        const SizedBox(width: 18),
+                        bookImage('assets/images/black.png', '4'),
+                        const SizedBox(width: 18),
+                        bookImage('assets/images/satel7osn.png', '2'),
                       ],
                     ),
                   ),
                 ),
 
-
                 Container(
                   height: 10,
                   width: 332,
-                  child: Image.asset(
-                    'assets/images/roof2.png',
-                  ),
+                  child: Image.asset('assets/images/roof2.png'),
                 ),
 
-
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
 
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Text(
-                              'عدّاء الطائرة الورقية',
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontFamily,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            margin: const EdgeInsets.only(right: 8),
-                            alignment: Alignment.topRight,
-                            child: Text(
-                              'خالد حسيني',
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontFamily,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(width: 18),
-
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Text(
-                              'في ممر الفئران',
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontFamily,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            margin: const EdgeInsets.only(right: 8),
-                            alignment: Alignment.topRight,
-                            child: Text(
-                              'أحمد خالد توفيق',
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontFamily,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(width: 18),
-
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Text(
-                              'قضية ست الحسن',
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontFamily,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            margin: const EdgeInsets.only(right: 8),
-                            alignment: Alignment.topRight,
-                            child: Text(
-                              'ميرنا المهدي',
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontFamily,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                      _bookInfo('عدّاء الطائرة الورقية', 'خالد حسيني'),
+                      const SizedBox(width: 18),
+                      _bookInfo('في ممر الفئران', 'أحمد خالد توفيق'),
+                      const SizedBox(width: 18),
+                      _bookInfo('قضية ست الحسن', 'ميرنا المهدي'),
                     ],
                   ),
                 ),
 
-
+                const SizedBox(height: 16),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _bookInfo(String title, String author) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: Text(
+            title,
+            style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ),
+        Container(
+          margin: const EdgeInsets.only(right: 8),
+          alignment: Alignment.topRight,
+          child: Text(
+            author,
+            textAlign: TextAlign.right,
+            style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
