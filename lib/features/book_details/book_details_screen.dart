@@ -5,6 +5,10 @@ import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/placeholder_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../data/book_repository.dart';
+import '../../data/models/book.dart';
+import '../../core/widgets/loading_view.dart';
+import '../../core/widgets/error_view.dart';
 
 
 class BookDetailsScreen extends StatefulWidget {
@@ -26,8 +30,86 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     'مكتمل',
   ];
 
+  Book? book;
+  bool isLoading = true;
+  bool isDescriptionExpanded = false;
+
+  ImageProvider getCoverImage(Book book) {
+    if (book.coverAsset.startsWith('https://') ||
+        book.coverAsset.startsWith('http://')) {
+      return NetworkImage(book.coverAsset);
+    }
+
+    if (book.coverAsset.isNotEmpty) {
+      return AssetImage(book.coverAsset);
+    }
+
+    return const AssetImage(
+      'assets/images/الامير الصغير.png',
+    );
+  }
+
+
+  String formatDescription(String description) {
+    return description
+
+        .replaceAll(RegExp(r'<[^>]*>'), ' ')
+
+
+        .replaceAll('&quot;', '"')
+        .replaceAll('quot&', '')
+        .replaceAll('&amp;', '&')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&nbsp;', ' ')
+
+
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+  }
+
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBook();
+  }
+
+  Future<void> _loadBook() async {
+    final result = await BookRepository().details(widget.bookId);
+
+    if (!mounted) return;
+
+    setState(() {
+      book = result;
+      isLoading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+
+    if (isLoading) {
+      return const Scaffold(
+        body: LoadingView(
+          message: 'جاري تحميل تفاصيل الكتاب...',
+          icon: Icons.menu_book,
+        ),
+      );
+    }
+
+    if (book == null) {
+      return Scaffold(
+        body: ErrorView(
+          title: 'تعذر تحميل تفاصيل الكتاب',
+          message: 'حاول الاتصال بالانترنت مرة اخري',
+          icon: Icons.menu_book_rounded,
+          onRetry: _loadBook,
+        ),
+      );
+    }
+
+    final currentBook = book!;
     return Scaffold(
 
       body: SafeArea(child: SingleChildScrollView(
@@ -118,7 +200,6 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                         SizedBox(height: 24.h,),
                         SizedBox(
                           width: 254.w,
-                          height: 387.h,
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.start,
@@ -130,7 +211,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                                   height: 260.h,
                                   decoration: ShapeDecoration(
                                     image: DecorationImage(
-                                      image: AssetImage('assets/images/الامير الصغير.png'),
+                                      image: getCoverImage(currentBook),
                                       fit: BoxFit.cover,
                                     ),
                                     shape: RoundedRectangleBorder(
@@ -180,6 +261,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                               SizedBox(
                                 width: double.infinity.w,
                                 child: Column(
+                                  mainAxisSize: MainAxisSize.min,
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.center,
 
@@ -187,8 +269,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                                     SizedBox(
                                       width: 254.w,
                                       child: Text(
-                                        'اللأمير الصغير',
+                                        currentBook.title,
                                         textAlign: TextAlign.center,
+                                        softWrap: true,
                                         style: TextStyle(
                                           color: AppColors.textPrimary,
                                           fontSize: 32.sp,
@@ -200,8 +283,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                                     SizedBox(
                                       width: 254.w,
                                       child: Text(
-                                        'انطوان دو سانت إكزوبيري\n',
+                                        currentBook.author,
                                         textAlign: TextAlign.center,
+                                        softWrap: true,
                                         style: TextStyle(
                                           color: AppColors.primary,
                                           fontSize: 16.sp,
@@ -217,111 +301,144 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                           ),
                         ),
                         Container(
-                          width: double.infinity.w,
-                          height: 74.h,
-                          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 16),
+                          width: double.infinity,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12.w,
+                            vertical: 12.h,
+                          ),
                           decoration: BoxDecoration(
                             color: AppColors.surface,
                             borderRadius: BorderRadius.circular(16.r),
                             border: Border.all(
                               width: 0.54,
                               color: AppColors.textPrimary.withValues(alpha: 0.1),
-                            )
+                            ),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.max,
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Column(
-                                children: [
-                                  Text(
-                                    'التصنيف',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 12.sp,
-                                      fontFamily: 'Tajawal',
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  SizedBox(height: 2.h,),
-                                  Text(
-                                    'رواية',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: AppColors.textPrimary,
-                                      fontSize: 13.sp,
-                                      fontFamily: 'Tajawal',
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Container(
-                                width: 1.w,
-                                height: 30.h,
-                                decoration: BoxDecoration(color: const Color(0x332B1D15)),
-                              ),
-                              Column(
-                                children: [
-                                  Text(
-                                    'سنة النشر',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 12.sp,
-                                      fontFamily: 'Tajawal',
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  SizedBox(height: 2.h,),
-                                  Text(
-                                    '1943',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: AppColors.textPrimary,
-                                      fontSize: 13.sp,
-                                      fontFamily: 'Tajawal',
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Container(
-                                width: 1.w,
-                                height: 30.h,
-                                decoration: BoxDecoration(color: const Color(0x332B1D15)),
-                              ),
-                              Column(
-                                children: [
-                                  Text(
-                                    'الصفحات',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 12.sp,
-                                      fontFamily: 'Tajawal',
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  SizedBox(height: 2.h,),
-                                  Text(
-                                    '96',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: AppColors.textPrimary,
-                                      fontSize: 13.sp,
-                                      fontFamily: 'Tajawal',
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                          child:
+                          IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
 
+                              children: [
+                                // التصنيف
+                                Expanded(
+                                  flex: 2,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'التصنيف',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 12.sp,
+                                          fontFamily: 'Tajawal',
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4.h),
+                                      Text(
+                                        currentBook.category.isNotEmpty
+                                            ? currentBook.category
+                                            .split(RegExp(r'\s*&\s*|\s*,\s*'))
+                                            .where((category) => category.trim().isNotEmpty)
+                                            .join('\n')
+                                            : 'غير متاح',
+                                        textAlign: TextAlign.center,
+                                        softWrap: true,
+                                        style: TextStyle(
+                                          color: AppColors.textPrimary,
+                                          fontSize: 12.sp,
+                                          fontFamily: 'Tajawal',
+                                          fontWeight: FontWeight.w700,
+                                          height: 1.3,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
 
-                            ],
+                                Container(
+                                  width: 1.w,
+                                  height: 30.h,
+                                  margin: EdgeInsets.symmetric(horizontal: 8.w),
+                                  color: const Color(0x332B1D15),
+                                ),
+
+                                // سنة النشر
+                                Expanded(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'سنة النشر',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 12.sp,
+                                          fontFamily: 'Tajawal',
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4.h),
+                                      Text(
+                                        currentBook.publishedDate.length >= 4
+                                            ? currentBook.publishedDate.substring(0, 4)
+                                            : 'غير متاح',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: AppColors.textPrimary,
+                                          fontSize: 13.sp,
+                                          fontFamily: 'Tajawal',
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                Container(
+                                  width: 1.w,
+                                  height: 30.h,
+                                  margin: EdgeInsets.symmetric(horizontal: 8.w),
+                                  color: const Color(0x332B1D15),
+                                ),
+
+                                // عدد الصفحات
+                                Expanded(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'الصفحات',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 12.sp,
+                                          fontFamily: 'Tajawal',
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4.h),
+                                      Text(
+                                        currentBook.pages > 0
+                                            ? '${currentBook.pages}'
+                                            : 'غير متاح',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: AppColors.textPrimary,
+                                          fontSize: 13.sp,
+                                          fontFamily: 'Tajawal',
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+
                         ),
 
                         SizedBox(height: 24.h,),
@@ -346,51 +463,48 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                               SizedBox(
                                 width: double.infinity.w,
                                 child: Text(
-                                  'تروي «الأمير الصغير» رحلة طفل بين الكواكب، يكتشف خلالها معاني الصداقة والحب والمسؤولية، ويتعلم أن أهم الأشياء لا تُرى بالعين وحدها.',
+                                  currentBook.description.isNotEmpty
+                                      ? formatDescription(currentBook.description)
+                                      : 'لا يتوفر وصف لهذا الكتاب.',
+                                  maxLines: isDescriptionExpanded ? null : 5,
+                                  overflow: isDescriptionExpanded
+                                      ? TextOverflow.visible
+                                      : TextOverflow.ellipsis,
                                   textAlign: TextAlign.right,
+                                  softWrap: true,
                                   style: TextStyle(
                                     color: AppColors.textSecondary,
                                     fontSize: 14.sp,
                                     fontFamily: 'Tajawal',
                                     fontWeight: FontWeight.w500,
+                                    height: 1.4,
                                   ),
                                 ),
+
                               ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 28.h,),
-                        SizedBox(
-                          width: double.infinity.w,
-                          child: Column(
-                            children: [
-                              SizedBox(
-                                width: double.infinity.w,
-                                child: Text(
-                                  'عن المؤلف',
-                                  textAlign: TextAlign.right,
-                                  style: TextStyle(
-                                    color: AppColors.textPrimary,
-                                    fontSize: 20.sp,
-                                    fontFamily: 'Tajawal',
-                                    fontWeight: FontWeight.w700,
+
+                              if (currentBook.description.isNotEmpty &&
+                                  formatDescription(currentBook.description).length > 250)
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: TextButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        isDescriptionExpanded = !isDescriptionExpanded;
+                                      });
+                                    },
+                                    child: Text(
+                                      isDescriptionExpanded ? 'اقرأ أقل' : 'اقرأ المزيد',
+                                      style: TextStyle(
+                                        color: AppColors.primary,
+                                        fontSize: 14.sp,
+                                        fontFamily: 'Tajawal',
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                              SizedBox(height: 4.h,),
-                              SizedBox(
-                                width: double.infinity.w,
-                                child: Text(
-                                  'أنطوان دو سانت إكزوبيري كاتب وطيار فرنسي، اشتهر بروايته «الأمير الصغير» التي نُشرت عام 1943، وتتناول الصداقة والحب ومعنى الحياة.',
-                                  textAlign: TextAlign.right,
-                                  style: TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 14.sp,
-                                    fontFamily: 'Tajawal',
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
+
                             ],
                           ),
                         ),
