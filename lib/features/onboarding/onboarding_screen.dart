@@ -21,14 +21,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   // علشان نعرض الصفحتين بنفس الكود بدل ما نكرر تصميم كل صفحة.
   final List<Map<String, String>> _pages = [
     {
-      'image': 'assets/images/onboarding_2_illustration.jpg',
+      'image': 'assets/images/raffi2.jpg',
       'title': 'رفوفك بطريقتك',
       'description':
       'نظم مكتبتك واجمع كتبك المفضلة في مساحة واحدة. '
           'واستمتع بالوصول إليها في أي وقت.',
     },
     {
-      'image': 'assets/images/onboarding_3_illustration.jpg',
+      'image': 'assets/images/raffi3.jpg',
       'title': 'اكتشف حكايتك القادمة',
       'description':
       'استكشف كتبا جديدة واكتشف قصصا وعوالم '
