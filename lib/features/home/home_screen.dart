@@ -5,6 +5,9 @@ import '../../core/theme/app_theme.dart';
 import 'see_all_screen.dart';
 import '../../core/theme/app_colors.dart';
 import 'dart:ui';
+import 'package:go_router/go_router.dart';
+import 'package:raffi/core/router/app_router.dart';
+import 'package:raffi/data/book_section.dart';
 
 class home_screen extends StatefulWidget {
   const home_screen({super.key});
@@ -14,6 +17,53 @@ class home_screen extends StatefulWidget {
 }
 
 class _home_screenState extends State<home_screen> {
+  final Set<int> favoriteBooks = {};
+
+  Widget bookImage(String imagePath, int bookId) {
+    final bool isFavorite = favoriteBooks.contains(bookId);
+
+    return SizedBox(
+      height: 150,
+      child: Stack(
+        children: [
+          Image.asset(
+            imagePath,
+            height: 150,
+            fit: BoxFit.contain,
+          ),
+          Positioned(
+            top: 4,
+            right: 4,
+            child: Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                iconSize: 21,
+                onPressed: () {
+                  setState(() {
+                    if (isFavorite) {
+                      favoriteBooks.remove(bookId);
+                    } else {
+                      favoriteBooks.add(bookId);
+                    }
+                  });
+                },
+                icon: Icon(
+                  isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: isFavorite ? Colors.red : Colors.grey,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
   List<String> Types = [
     'الكل',
     'رواية',
@@ -84,7 +134,7 @@ class _home_screenState extends State<home_screen> {
                   child: Align(
                     alignment: Alignment.topRight,
                     child: Text(
-                      'أهلا بيك فى رقّي 🤎',
+                      'أهلا بيك فى رفّي 🤎',
                       textAlign: TextAlign.right,
                       style: TextStyle(
                         fontFamily: AppTheme.fontFamily,
@@ -551,12 +601,12 @@ class _home_screenState extends State<home_screen> {
                   child: Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.bottomRight,
-                        end: Alignment.topLeft,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                         colors: [
-                          Color(0xFF352116),
-                          Color(0xFF5D3A2A),
+                          const Color(0xFF74503B),
+                          const Color(0xFF2B1D15)
                         ],
                       ),
                       borderRadius: BorderRadius.circular(20),
@@ -576,13 +626,13 @@ class _home_screenState extends State<home_screen> {
                             style: TextStyle(
                               fontFamily: AppTheme.fontFamily,
                               fontSize: 14,
-                              fontWeight: FontWeight.w300,
+                              fontWeight: FontWeight.w400,
                               color: Color(0xFFBF6428),
                             ),
                           ),
                         ),
 
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 22),
 
                         Container(
                           margin: const EdgeInsets.only(right: 12),
@@ -597,7 +647,7 @@ class _home_screenState extends State<home_screen> {
                               color: Colors.white,
                             ),
                           ),
-                        ),
+                        ),const SizedBox(height: 6),
 
                         Container(
                           margin: const EdgeInsets.only(right: 12),
@@ -690,13 +740,9 @@ class _home_screenState extends State<home_screen> {
 
                       GestureDetector(
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const SeeAllScreen(),
-                            ),
-                          );
-                          // context.push(AppRoutes.search, extra: BookSection.recent);
+
+
+                          context.push(AppRoutes.search, extra: BookSection.recent);
                         },
                         child: Text(
                           'عرض الكل',
@@ -721,26 +767,11 @@ class _home_screenState extends State<home_screen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Container(
-                          height: 150,
-                          child: Image.asset(
-                            'assets/images/Frame 22.png',
-                          ),
-                        ),
+                        bookImage('assets/images/Frame 22.png', 1),
                         SizedBox(width: 18),
-                        Container(
-                          height: 150,
-                          child: Image.asset(
-                            'assets/images/black.png',
-                          ),
-                        ),
+                        bookImage('assets/images/black.png', 2),
                         SizedBox(width: 18),
-                        Container(
-                          height: 150,
-                          child: Image.asset(
-                            'assets/images/satel7osn.png',
-                          ),
-                        ),
+                        bookImage('assets/images/satel7osn.png', 3),
                       ],
                     ),
                   ),
@@ -748,9 +779,9 @@ class _home_screenState extends State<home_screen> {
 
                 Container(
                   height: 10,
-                  width: 550,
+                  width: 332,
                   child: Image.asset(
-                    'assets/images/roof.png',
+                    'assets/images/roof2.png',
                   ),
                 ),
 
@@ -883,13 +914,7 @@ class _home_screenState extends State<home_screen> {
 
                       GestureDetector(
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const SeeAllScreen(),
-                            ),
-                          );
-                          // context.push(AppRoutes.search, extra: BookSection.recommended);
+                          context.push(AppRoutes.search, extra: BookSection.recommended);
                         },
                         child: Text(
                           'عرض الكل',
@@ -914,26 +939,11 @@ class _home_screenState extends State<home_screen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Container(
-                          height: 150,
-                          child: Image.asset(
-                            'assets/images/Frame 22.png',
-                          ),
-                        ),
+                        bookImage('assets/images/Frame 22.png', 4),
                         SizedBox(width: 18),
-                        Container(
-                          height: 150,
-                          child: Image.asset(
-                            'assets/images/black.png',
-                          ),
-                        ),
+                        bookImage('assets/images/black.png', 5),
                         SizedBox(width: 18),
-                        Container(
-                          height: 150,
-                          child: Image.asset(
-                            'assets/images/satel7osn.png',
-                          ),
-                        ),
+                        bookImage('assets/images/satel7osn.png', 6),
                       ],
                     ),
                   ),
@@ -942,9 +952,9 @@ class _home_screenState extends State<home_screen> {
 
                 Container(
                   height: 10,
-                  width: 550,
+                  width: 332,
                   child: Image.asset(
-                    'assets/images/roof.png',
+                    'assets/images/roof2.png',
                   ),
                 ),
 
