@@ -9,6 +9,9 @@ import '../../data/book_repository.dart';
 import '../../data/models/book.dart';
 import '../../core/widgets/loading_view.dart';
 import '../../core/widgets/error_view.dart';
+import 'package:raffi/features/favorites/favorites_provider.dart';
+import 'package:provider/provider.dart';
+
 
 
 class BookDetailsScreen extends StatefulWidget {
@@ -110,6 +113,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     }
 
     final currentBook = book!;
+    final favoritesProvider = context.watch<FavoritesProvider>();
+    final isFavorite = favoritesProvider.isFavorite(currentBook.id);
+
     return Scaffold(
 
       body: SafeArea(child: SingleChildScrollView(
@@ -155,15 +161,13 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                               child: IconButton(
                                 padding: EdgeInsets.zero,
                                 constraints: const BoxConstraints(),
-                                  onPressed: () {
-                                    setState(() {
-                                      isSelected = !isSelected;
-                                    });
+                                  onPressed: () async {
+                                  await context.read<FavoritesProvider>().toggle(currentBook);
                                   },
                                   icon: Stack(
                                     alignment: Alignment.center,
                                     children: [
-                                      if(isSelected == true)
+                                      if(isFavorite == true)
                                         Icon(
                                           Icons.favorite, color: AppColors.primary,
                                         ),
