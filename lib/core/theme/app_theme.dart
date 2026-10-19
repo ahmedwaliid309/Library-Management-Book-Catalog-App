@@ -22,16 +22,17 @@ class AppTheme {
       displayColor: AppColors.textPrimary,
     );
 
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: AppColors.primary,
-      brightness: Brightness.light,
-    ).copyWith(
-      primary: AppColors.primary,
-      onPrimary: AppColors.onPrimary,
-      surface: AppColors.background,
-      onSurface: AppColors.textPrimary,
-      error: AppColors.error,
-    );
+    final colorScheme =
+        ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          brightness: Brightness.light,
+        ).copyWith(
+          primary: AppColors.primary,
+          onPrimary: AppColors.onPrimary,
+          surface: AppColors.background,
+          onSurface: AppColors.textPrimary,
+          error: AppColors.error,
+        );
 
     return base.copyWith(
       colorScheme: colorScheme,
@@ -156,20 +157,21 @@ class AppTheme {
         backgroundColor: AppColors.background,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        height: 68.h,
+        height: 30.h, 
         indicatorColor: Colors.transparent,
+        labelPadding: EdgeInsets.zero,
         iconTheme: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return IconThemeData(
             color: selected ? AppColors.primary : AppColors.textSecondary,
-            size: 24.sp,
+            size: 24,
           );
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return TextStyle(
             fontFamily: fontFamily,
-            fontSize: 12.sp,
+            fontSize: 12,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
             color: selected ? AppColors.primary : AppColors.textSecondary,
           );
