@@ -2,11 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:raffi/core/theme/app_colors.dart';
-import 'package:raffi/features/onboarding/onboarding_screen.dart';
-
 import '../../core/router/app_router.dart';
-import '../../core/widgets/placeholder_screen.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'onboarding_preferences.dart';
 
