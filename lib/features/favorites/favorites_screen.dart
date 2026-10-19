@@ -1,52 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/router/app_router.dart';
-import 'data/favorite_book.dart';
+import 'favorites_provider.dart';
 import 'widgets/favorites_count_card.dart';
 import 'widgets/favorites_empty_state.dart';
 import 'widgets/favorites_header.dart';
 import 'widgets/favorites_shelf.dart';
 
-// المسؤول: السيد (حالة فاضية + حالة فيها كتب)
-class FavoritesScreen extends StatefulWidget {
+class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
 
   @override
-  State<FavoritesScreen> createState() => _FavoritesScreenState();
-}
-
-class _FavoritesScreenState extends State<FavoritesScreen> {
-  // بيانات تجريبية
-  List<FavoriteBook> _books = sampleFavoriteBooks;
-
-  // للمراجعة بس: زر الفلتر
-  // TODO(logic): يتشال ويتبدل بفلتر حقيقي.
-  void _toggleDemoState() {
-    setState(() {
-      _books = _books.isEmpty ? sampleFavoriteBooks : const [];
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final favorites = context.watch<FavoritesProvider>();
+    final books = favorites.items;
 
+    return Scaffold(
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
-            FavoritesHeader(onFilterTap: _toggleDemoState),
-            FavoritesCountCard(count: _books.length),
+            const FavoritesHeader(),
+            FavoritesCountCard(count: books.length),
             Expanded(
-              child: _books.isEmpty
+              child: !favorites.isLoaded
+                  ? const Center(
+                child: CircularProgressIndicator(),
+              )
+                  : books.isEmpty
                   ? FavoritesEmptyState(
-                onDiscover: () => context.go(AppRoutes.home),
+                onDiscover: () =>
+                    context.go(AppRoutes.home),
               )
                   : FavoritesShelf(
-                books: _books,
-                onBookTap: (book) =>
-                    context.push(AppRoutes.bookPath(book.id)),
+                books: books,
+                onBookTap: (book) => context.push(
+                  AppRoutes.bookPath(book.id),
+                ),
+                onFavoriteTap: (book) {
+                  context
+                      .read<FavoritesProvider>()
+                      .toggle(book);
+                },
               ),
             ),
           ],
