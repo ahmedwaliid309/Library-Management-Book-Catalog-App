@@ -11,8 +11,8 @@ import 'package:raffi/core/widgets/book_card.dart';
 import 'package:raffi/data/book_repository.dart';
 import 'package:raffi/data/book_section.dart';
 import 'package:raffi/data/models/book.dart';
+import 'package:raffi/data/recent_books_repository.dart';
 import 'package:raffi/providers/favorites_provider.dart';
-import 'package:raffi/providers/history_provider.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key, this.section = BookSection.recent});
@@ -31,26 +31,51 @@ class _SearchScreenState extends State<SearchScreen> {
   /// الكلمة اللي بتتبحث دلوقتي. فاضية = كتب القسم الافتراضية.
   String _query = '';
   Future<List<Book>> _booksFuture = Future.value(const <Book>[]);
+
+  /// الكتب اللي المستخدم فتحها (نفس مصدر رف Home)
+  List<Book> _recentBooks = const [];
+  bool _recentLoading = true;
+
   OutlineInputBorder get _noBorder => OutlineInputBorder(
-    borderRadius: BorderRadius.circular(12.r),
-    borderSide: BorderSide.none,
-  );
+        borderRadius: BorderRadius.circular(12.r),
+        borderSide: BorderSide.none,
+      );
 
   @override
   void initState() {
     super.initState();
+    // أي كتاب يتضاف للسجل (من التفاصيل) الشاشة دي تتحدث تلقائياً
+    RecentBooksRepository.changes.addListener(_loadRecent);
+    _loadRecent();
     // لو هنعرض السجل مفيش داعي لطلب نت
     if (!_showHistory) _booksFuture = _load();
   }
 
   @override
   void dispose() {
+    RecentBooksRepository.changes.removeListener(_loadRecent);
     _debounce?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
-  // TODO: "آخر ما تصفحت" تيجي من HistoryProvider (سارة) لما يجهز
+  Future<void> _loadRecent() async {
+    try {
+      final books = await RecentBooksRepository().getRecentBooks();
+      if (!mounted) return;
+      setState(() {
+        _recentBooks = books;
+        _recentLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _recentBooks = const [];
+        _recentLoading = false;
+      });
+    }
+  }
+
   String get _defaultQuery =>
       widget.section == BookSection.recent ? 'روايات' : 'أدب';
 
@@ -238,7 +263,6 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  // تحميل / خطأ / لا نتايج / النتايج
   // سجل التصفح / تحميل / خطأ / لا نتايج / النتايج
   Widget _buildResults() {
     if (_showHistory) return _buildHistory();
@@ -279,16 +303,13 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  // الكتب اللي المستخدم فتحها قبل كده (من HistoryProvider)
+  // الكتب اللي المستخدم فتحها قبل كده (نفس مصدر رف Home)
   Widget _buildHistory() {
-    final history = context.watch<HistoryProvider>();
-
-    if (!history.isInitialized) {
+    if (_recentLoading) {
       return const _StatusView(loading: true, title: 'جاري التحميل...');
     }
 
-    final books = history.recentBooks;
-    if (books.isEmpty) {
+    if (_recentBooks.isEmpty) {
       return const _StatusView(
         icon: Icons.history,
         title: 'لم تتصفح أي كتاب بعد',
@@ -296,7 +317,7 @@ class _SearchScreenState extends State<SearchScreen> {
       );
     }
 
-    return _booksGrid(books);
+    return _booksGrid(_recentBooks);
   }
 
   Widget _booksGrid(List<Book> books) {

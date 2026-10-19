@@ -12,7 +12,7 @@ import '../../core/theme/app_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:raffi/data/book_repository.dart';
 import 'package:raffi/data/models/book.dart';
-import 'package:raffi/data/recent_books_repository.dart';
+import 'package:raffi/providers/history_provider.dart';
 import 'package:raffi/core/widgets/book_card.dart';
 
 class BookItem {
@@ -83,18 +83,12 @@ class _home_screenState extends State<home_screen> {
     super.initState();
     // Provider.read لا يشترك في التغييرات، ومناسب لبدء الطلب مرة واحدة.
     _repo = context.read<BookRepository>();
-    RecentBooksRepository.changes.addListener(_onRecentBooksChanged);
-    _loadRecent();
+    // رف "آخر ما تصفحت" بيتحدث لوحده من HistoryProvider (شوف build).
     _loadRecommended();
-  }
-
-  void _onRecentBooksChanged() {
-    if (mounted) _loadRecent();
   }
 
   @override
   void dispose() {
-    RecentBooksRepository.changes.removeListener(_onRecentBooksChanged);
     _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
@@ -255,20 +249,14 @@ class _home_screenState extends State<home_screen> {
     }
   }
 
-  Future<void> _loadRecent() => _load(
-    recent,
-    // سجل الكتب التي فتحها المستخدم فعلياً، محفوظ محلياً على الجهاز.
-    () => RecentBooksRepository().getRecentBooks(),
-  );
-
   Future<void> _loadRecommended() => _load(
     recommended,
     // نبدأ بتصنيف الروايات، ويمكن تغييره من الفلتر.
         () => _repo.byCategory('Fiction'),
   );
 
-  Future<void> _refreshAll() =>
-      Future.wait([_loadRecent(), _loadRecommended()]);
+  // "آخر ما تصفحت" بيتحدث لوحده من HistoryProvider، فالسحب للتحديث للـ "قد يعجبك" بس.
+  Future<void> _refreshAll() => _loadRecommended();
 
   // ===== فلتر =====
   final List<String> types = const [
@@ -861,6 +849,14 @@ class _home_screenState extends State<home_screen> {
 
   @override
   Widget build(BuildContext context) {
+    // رف "آخر ما تصفحت" بيقرا من HistoryProvider، فبيتحدث لوحده
+    // لما أي كتاب يتفتح (نفس مصدر شاشة "عرض الكل").
+    final history = context.watch<HistoryProvider>();
+    recent
+      ..isLoading = !history.isInitialized
+      ..error = null
+      ..items = history.recentBooks.map(BookItem.fromBook).toList();
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
@@ -1153,7 +1149,8 @@ class _home_screenState extends State<home_screen> {
 
                     const SizedBox(height: 6),
 
-                    _booksSection(recent, _loadRecent),
+                    // مفيش إعادة محاولة هنا: السجل محلي بيتحدث لوحده
+                    _booksSection(recent, () {}),
 
                     const SizedBox(height: 16),
 

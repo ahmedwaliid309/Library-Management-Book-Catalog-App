@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import 'package:raffi/providers/library_provider.dart';
 import 'package:raffi/providers/favorites_provider.dart';
+import 'package:raffi/providers/history_provider.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
@@ -13,13 +14,9 @@ import '../../core/widgets/loading_view.dart';
 import '../../core/widgets/error_view.dart';
 import '../../data/book_repository.dart';
 import '../../data/models/book.dart';
-import '../../data/recent_books_repository.dart';
 
 class BookDetailsScreen extends StatefulWidget {
-  const BookDetailsScreen({
-    super.key,
-    required this.bookId,
-  });
+  const BookDetailsScreen({super.key, required this.bookId});
 
   final String bookId;
 
@@ -78,11 +75,11 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     try {
       final result = await BookRepository().details(widget.bookId);
 
-      if (result != null) {
-        // تسجيل الكتاب في آخر ما تصفحته.
-        // تعذر التسجيل لا يمنع عرض تفاصيل الكتاب.
+      // تسجيل الكتاب في "آخر ما تصفحت" (HistoryProvider).
+      // تعذر التسجيل لا يمنع عرض تفاصيل الكتاب.
+      if (result != null && mounted) {
         try {
-          await RecentBooksRepository().addBook(result);
+          await context.read<HistoryProvider>().recordViewedBook(result);
         } catch (_) {
           // تجاهل خطأ سجل التصفح.
         }
@@ -109,9 +106,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
 
     if (selectedBookStatus == -1) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('اختاري الرف المناسب للكتاب أولاً'),
-        ),
+        const SnackBar(content: Text('اختاري الرف المناسب للكتاب أولاً')),
       );
       return;
     }
@@ -129,9 +124,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
 
     try {
       final added = await context.read<LibraryProvider>().addBook(
-            book!,
-            status: status,
-          );
+        book!,
+        status: status,
+      );
 
       if (!mounted) return;
 
@@ -141,9 +136,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('الكتاب موجود بالفعل في مكتبتك'),
-          ),
+          const SnackBar(content: Text('الكتاب موجود بالفعل في مكتبتك')),
         );
         return;
       }
@@ -157,9 +150,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('تعذرت إضافة الكتاب، حاولي مرة أخرى'),
-        ),
+        const SnackBar(content: Text('تعذرت إضافة الكتاب، حاولي مرة أخرى')),
       );
     }
   }
@@ -171,9 +162,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('تعذر تحديث المفضلة، حاولي مرة أخرى'),
-        ),
+        const SnackBar(content: Text('تعذر تحديث المفضلة، حاولي مرة أخرى')),
       );
     }
   }
@@ -195,18 +184,13 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
         child: Container(
           height: 64.h,
           margin: EdgeInsets.symmetric(horizontal: 3.w),
-          padding: EdgeInsets.symmetric(
-            horizontal: 2.w,
-            vertical: 6.h,
-          ),
+          padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 6.h),
           decoration: BoxDecoration(
             color: isSelected
                 ? const Color(0xFFF4E2D4)
                 : const Color(0xFFF6EFE1),
             border: isSelected
-                ? Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.53),
-                  )
+                ? Border.all(color: AppColors.primary.withValues(alpha: 0.53))
                 : null,
             borderRadius: BorderRadius.circular(10.r),
           ),
@@ -215,9 +199,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             children: [
               Icon(
                 icon,
-                color: isSelected
-                    ? AppColors.primary
-                    : AppColors.textSecondary,
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
               ),
               Text(
                 title,
@@ -241,10 +223,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
   Widget _buildBookInformation(Book currentBook) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(
-        horizontal: 12.w,
-        vertical: 12.h,
-      ),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16.r),
@@ -263,9 +242,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                 title: 'التصنيف',
                 value: currentBook.category.isNotEmpty
                     ? currentBook.category
-                        .split(RegExp(r'\s*&\s*|\s*,\s*'))
-                        .where((category) => category.trim().isNotEmpty)
-                        .join('\n')
+                          .split(RegExp(r'\s*&\s*|\s*,\s*'))
+                          .where((category) => category.trim().isNotEmpty)
+                          .join('\n')
                     : 'غير متاح',
               ),
             ),
@@ -293,10 +272,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     );
   }
 
-  Widget _buildInfoItem({
-    required String title,
-    required String value,
-  }) {
+  Widget _buildInfoItem({required String title, required String value}) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -357,9 +333,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
         SizedBox(
           width: double.infinity,
           child: Text(
-            description.isNotEmpty
-                ? description
-                : 'لا يتوفر وصف لهذا الكتاب.',
+            description.isNotEmpty ? description : 'لا يتوفر وصف لهذا الكتاب.',
             maxLines: isDescriptionExpanded ? null : 5,
             overflow: isDescriptionExpanded
                 ? TextOverflow.visible
@@ -405,9 +379,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
         color: AppColors.onPrimary,
-        border: Border.all(
-          color: AppColors.textPrimary.withValues(alpha: 0.1),
-        ),
+        border: Border.all(color: AppColors.textPrimary.withValues(alpha: 0.1)),
         borderRadius: BorderRadius.circular(16.r),
       ),
       child: Column(
@@ -479,17 +451,13 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    isAddingBook ? 'جاري الإضافة...' : 'أضف إلى مكتبتي',
-                  ),
+                  Text(isAddingBook ? 'جاري الإضافة...' : 'أضف إلى مكتبتي'),
                   SizedBox(width: 10.w),
                   if (isAddingBook)
                     SizedBox(
                       width: 18.w,
                       height: 18.h,
-                      child: const CircularProgressIndicator(
-                        strokeWidth: 2,
-                      ),
+                      child: const CircularProgressIndicator(strokeWidth: 2),
                     )
                   else
                     Icon(Icons.add_rounded, size: 24.w),
@@ -532,11 +500,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding: EdgeInsets.only(
-              bottom: 24.h,
-              left: 24.w,
-              right: 24.w,
-            ),
+            padding: EdgeInsets.only(bottom: 24.h, left: 24.w, right: 24.w),
             child: Stack(
               alignment: Alignment.topCenter,
               children: [
@@ -670,15 +634,11 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                       child: OutlinedButton.icon(
                         onPressed: () => _toggleFavorite(currentBook),
                         icon: Icon(
-                          isFavorite
-                              ? Icons.favorite
-                              : Icons.favorite_border,
+                          isFavorite ? Icons.favorite : Icons.favorite_border,
                           color: AppColors.primary,
                         ),
                         label: Text(
-                          isFavorite
-                              ? 'إزالة من المفضلة'
-                              : 'أضف إلى المفضلة',
+                          isFavorite ? 'إزالة من المفضلة' : 'أضف إلى المفضلة',
                         ),
                       ),
                     ),
@@ -702,19 +662,14 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
       height: 44.h,
       decoration: BoxDecoration(
         color: AppColors.onPrimary,
-        border: Border.all(
-          color: AppColors.textPrimary.withValues(alpha: 0.1),
-        ),
+        border: Border.all(color: AppColors.textPrimary.withValues(alpha: 0.1)),
         borderRadius: BorderRadius.circular(15.r),
       ),
       child: IconButton(
         padding: EdgeInsets.zero,
         constraints: const BoxConstraints(),
         onPressed: onPressed,
-        icon: Icon(
-          icon,
-          color: iconColor ?? AppColors.textPrimary,
-        ),
+        icon: Icon(icon, color: iconColor ?? AppColors.textPrimary),
       ),
     );
   }
