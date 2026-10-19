@@ -1,10 +1,13 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
+import 'package:raffi/providers/library_provider.dart';
+
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/widgets/placeholder_screen.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import '../../data/book_repository.dart';
 import '../../data/models/book.dart';
 import '../../core/widgets/loading_view.dart';
@@ -15,27 +18,33 @@ import 'package:provider/provider.dart';
 
 
 class BookDetailsScreen extends StatefulWidget {
-  const BookDetailsScreen({super.key, required this.bookId});
+  const BookDetailsScreen({
+    super.key,
+    required this.bookId,
+  });
 
   final String bookId;
 
   @override
-  State<BookDetailsScreen> createState() => _BookDetailsScreenState();
+  State<BookDetailsScreen> createState() =>
+      _BookDetailsScreenState();
 }
 
 class _BookDetailsScreenState extends State<BookDetailsScreen> {
-
   bool isSelected = false;
+  bool isAddingBook = false;
+  bool isLoading = true;
+  bool isDescriptionExpanded = false;
+
   int selectedBookStatus = -1;
-  List<String> buttons = [
+
+  final List<String> buttons = [
     'أريد قراءته',
     'أقرأ حاليا',
     'مكتمل',
   ];
 
   Book? book;
-  bool isLoading = true;
-  bool isDescriptionExpanded = false;
 
   ImageProvider getCoverImage(Book book) {
     if (book.coverAsset.startsWith('https://') ||
@@ -52,31 +61,25 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     );
   }
 
-
   String formatDescription(String description) {
     return description
-
         .replaceAll(RegExp(r'<[^>]*>'), ' ')
-
-
         .replaceAll('&quot;', '"')
         .replaceAll('quot&', '')
         .replaceAll('&amp;', '&')
         .replaceAll('&lt;', '<')
         .replaceAll('&gt;', '>')
         .replaceAll('&nbsp;', ' ')
-
-
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
   }
-
 
   @override
   void initState() {
     super.initState();
     _loadBook();
   }
+
 
   Future<void> _loadBook() async {
     final result = await BookRepository().details(widget.bookId);
@@ -88,6 +91,68 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
       isLoading = false;
     });
   }
+
+
+  Future<void> _addBookToLibrary() async {
+    if (book == null) return;
+
+    if (selectedBookStatus == -1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('اختاري الرف المناسب للكتاب أولاً'),
+        ),
+      );
+      return;
+    }
+
+    final status = switch (selectedBookStatus) {
+      0 => ReadingStatus.wantToRead,
+      1 => ReadingStatus.currentlyReading,
+      2 => ReadingStatus.completed,
+      _ => ReadingStatus.wantToRead,
+    };
+
+    setState(() {
+      isAddingBook = true;
+    });
+
+    try {
+      final added = await context.read<LibraryProvider>().addBook(
+        book!,
+        status: status,
+      );
+
+      if (!mounted) return;
+
+      if (!added) {
+        setState(() {
+          isAddingBook = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('الكتاب موجود بالفعل في مكتبتك'),
+          ),
+        );
+        return;
+      }
+
+      context.go(AppRoutes.library);
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        isAddingBook = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('تعذرت إضافة الكتاب، حاولي مرة أخرى'),
+        ),
+      );
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -701,15 +766,18 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                                   ),
                                   SizedBox(height: 12.h,),
                                   ElevatedButton(
-                                      onPressed: () => context.go(AppRoutes.library),
+                                      onPressed: isAddingBook ? null : _addBookToLibrary,
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         crossAxisAlignment: CrossAxisAlignment.center,
                                         spacing: 10.w,
                                         children: [
-                                          Text('أضف إلى مكتبتى'),
-                                          Icon(Icons.add_rounded,size: 24.w,),
+                                          Text(
+                                            isAddingBook ? 'جاري الإضافة...' : 'أضف إلى مكتبتي',
+                                          ),
+                                          SizedBox(width: 10.w),
+                                          Icon(Icons.add_rounded, size: 24.w),
                                         ],
                                       )
                                   )
@@ -722,7 +790,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                         ),
                         SizedBox(height: 24.h,),
                         ElevatedButton(
-                            onPressed: () => context.go(AppRoutes.favorites),
+                            onPressed: () async {
+                              await context.read<FavoritesProvider>().toggle(currentBook);
+                            },
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               mainAxisAlignment: MainAxisAlignment.center,
