@@ -85,8 +85,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                       Image.asset(
                         'assets/images/raffi.png',
-                        width: 75.w,
-                        height: 42.h,
+                        width: 90.w,
+                        height: 48.h,
                         fit: BoxFit.contain,
                         // هنا بنعرض اللوجو، ولو حصل خطأ بنعرض نص بديل.
                         errorBuilder: (context, error, stackTrace) => Text(
