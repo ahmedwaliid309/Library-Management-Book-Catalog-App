@@ -9,7 +9,7 @@ import '../../data/book_repository.dart';
 import '../../data/models/book.dart';
 import '../../core/widgets/loading_view.dart';
 import '../../core/widgets/error_view.dart';
-import 'package:raffi/features/favorites/favorites_provider.dart';
+import 'package:raffi/providers/favorites_provider.dart';
 import 'package:provider/provider.dart';
 
 

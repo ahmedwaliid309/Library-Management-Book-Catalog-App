@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/router/app_router.dart';
-import 'favorites_provider.dart';
+import '../../providers/favorites_provider.dart';
 import 'widgets/favorites_count_card.dart';
 import 'widgets/favorites_empty_state.dart';
 import 'widgets/favorites_header.dart';
@@ -32,7 +32,7 @@ class FavoritesScreen extends StatelessWidget {
                   : books.isEmpty
                   ? FavoritesEmptyState(
                 onDiscover: () =>
-                    context.go(AppRoutes.home),
+                    context.go(AppRoutes.search),
               )
                   : FavoritesShelf(
                 books: books,
