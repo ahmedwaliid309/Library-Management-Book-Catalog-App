@@ -8,6 +8,7 @@ class Book {
     this.rating = 0,
     this.pages = 0,
     this.category = '',
+    this.publishedDate = '',
   });
 
   final String id;
@@ -22,6 +23,7 @@ class Book {
   final double rating;
   final int pages;
   final String category;
+  final String publishedDate;
 
   /// من JSON المحفوظ محلياً (مفضلة، مكتبة، سجل التصفح)
   factory Book.fromJson(Map<String, dynamic> json) => Book(
@@ -33,6 +35,7 @@ class Book {
         rating: (json['rating'] as num?)?.toDouble() ?? 0,
         pages: json['pages'] as int? ?? 0,
         category: json['category'] as String? ?? '',
+        publishedDate: json['publishedDate'] as String? ?? '',
       );
 
   /// من رد Google Books API
@@ -48,6 +51,7 @@ class Book {
     final authors = (info['authors'] as List?)?.cast<String>() ?? const [];
     final cats = (info['categories'] as List?)?.cast<String>() ?? const [];
 
+
     return Book(
       id: item['id'] as String? ?? '',
       title: info['title'] as String? ?? '',
@@ -57,6 +61,7 @@ class Book {
       rating: (info['averageRating'] as num?)?.toDouble() ?? 0,
       pages: info['pageCount'] as int? ?? 0,
       category: cats.isNotEmpty ? cats.first : '',
+      publishedDate: info['publishedDate'] as String? ?? '',
     );
   }
 
@@ -70,6 +75,7 @@ class Book {
         'rating': rating,
         'pages': pages,
         'category': category,
+        'publishedDate': publishedDate,
       };
 
   // الكتاب هو هو لو نفس الـ id (مهم للمفضلة والمكتبة)
