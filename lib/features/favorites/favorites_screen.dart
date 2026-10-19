@@ -3,11 +3,12 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/router/app_router.dart';
-import '../../providers/favorites_provider.dart';
+import 'favorites_provider.dart';
 import 'widgets/favorites_count_card.dart';
 import 'widgets/favorites_empty_state.dart';
 import 'widgets/favorites_header.dart';
 import 'widgets/favorites_shelf.dart';
+
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
