@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -8,13 +9,19 @@ import 'package:raffi/data/book_section.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 
-/// موديل الكتاب - بيتبني مباشرة من الـ JSON اللي راجع من الـ API
-/// لو أسماء الحقول عندك مختلفة عدّلها في fromJson بس.
+import 'package:provider/provider.dart';
+import 'package:raffi/data/book_repository.dart';
+import 'package:raffi/data/models/book.dart';
+import 'package:raffi/data/recent_books_repository.dart';
+import 'package:raffi/core/widgets/book_card.dart';
+
 class BookItem {
-  final int id;
-  final String image; // رابط الغلاف (http) أو asset path
+  final String id;
+  final String image;
   final String title;
   final String author;
+  final String category;
+  final String readingStatus;
   final bool isFavorite;
 
   const BookItem({
@@ -22,74 +29,18 @@ class BookItem {
     required this.image,
     required this.title,
     required this.author,
+    this.category = '',
+    this.readingStatus = 'الكل',
     this.isFavorite = false,
   });
 
-  factory BookItem.fromJson(Map<String, dynamic> json) {
-    final dynamic rawAuthor = json['author'] ?? json['author_name'];
-
-    return BookItem(
-      id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
-      title: (json['title'] ?? json['name'] ?? '').toString(),
-      // لو الـ API راجع المؤلف كـ object فيه name
-      author: rawAuthor is Map
-          ? (rawAuthor['name'] ?? '').toString()
-          : (rawAuthor ?? '').toString(),
-      image:
-      (json['image'] ?? json['cover'] ?? json['cover_url'] ?? '').toString(),
-      isFavorite: json['is_favorite'] == true,
-    );
-  }
-}
-
-/// مكان الاتصال بالـ API.
-/// لما الـ API يجهز: خلّي useMock = false وكمّل الجزء الخاص بالـ request.
-/// (يفضّل تنقل الكلاس ده لملف لوحده جوه data/)
-class BooksRepository {
-  static const bool useMock = true;
-
-  Future<List<BookItem>> getRecentBooks() => _fetch('books/recent');
-
-  Future<List<BookItem>> getRecommendedBooks() => _fetch('books/recommended');
-
-  Future<List<BookItem>> _fetch(String endpoint) async {
-    if (useMock) {
-      // داتا تجريبية مؤقتة لحد ما الـ API يجهز
-      await Future.delayed(const Duration(milliseconds: 800));
-      final base = endpoint.contains('recent') ? 0 : 3;
-      final List<Map<String, dynamic>> json = [
-        {
-          'id': base + 1,
-          'title': 'عدّاء الطائرة الورقية',
-          'author': 'خالد حسيني',
-          'image': 'assets/images/Frame 22.png',
-        },
-        {
-          'id': base + 2,
-          'title': 'في ممر الفئران',
-          'author': 'أحمد خالد توفيق',
-          'image': 'assets/images/black.png',
-        },
-        {
-          'id': base + 3,
-          'title': 'قضية ست الحسن',
-          'author': 'ميرنا المهدي',
-          'image': 'assets/images/satel7osn.png',
-        },
-      ];
-      return json.map(BookItem.fromJson).toList();
-    }
-
-    // ===== مثال للاتصال الحقيقي (بعد إضافة package: http) =====
-    // final res = await http.get(Uri.parse('https://YOUR_API/$endpoint'));
-    // if (res.statusCode != 200) throw Exception('Failed: ${res.statusCode}');
-    // final decoded = jsonDecode(res.body);
-    // final List list = decoded is List ? decoded : decoded['data'];
-    // return list
-    //     .map((e) => BookItem.fromJson(e as Map<String, dynamic>))
-    //     .toList();
-    throw UnimplementedError('اربط الـ API هنا');
-  }
+  factory BookItem.fromBook(Book book) => BookItem(
+    id: book.id,
+    image: book.coverAsset,
+    title: book.title,
+    author: book.author,
+    category: book.category,
+  );
 }
 
 /// حالة كل سيكشن (تحميل / خطأ / داتا)
@@ -107,7 +58,7 @@ class home_screen extends StatefulWidget {
 }
 
 class _home_screenState extends State<home_screen> {
-  final Set<int> favoriteBooks = {};
+  final Set<String> favoriteBooks = {};
 
   // أبعاد فريم الكتاب (ثابتة عشان الشكل يفضل ثابت مع أي صورة جاية من الـ API)
   static const double _bookWidth = 105;
@@ -115,20 +66,169 @@ class _home_screenState extends State<home_screen> {
 
   static const double _bookGap = 18;
 
-  final BooksRepository _repo = BooksRepository();
+  late final BookRepository _repo;
   final _BooksState recent = _BooksState();
   final _BooksState recommended = _BooksState();
+
+  // بحث مباشر من الصفحة الرئيسية باستخدام نفس BookRepository المستخدم في صفحة البحث.
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _searchDebounce;
+  String _searchQuery = '';
+  List<BookItem> _homeSearchResults = [];
+  bool _isHomeSearching = false;
+  int _searchRequestId = 0;
 
   @override
   void initState() {
     super.initState();
+    // Provider.read لا يشترك في التغييرات، ومناسب لبدء الطلب مرة واحدة.
+    _repo = context.read<BookRepository>();
+    RecentBooksRepository.changes.addListener(_onRecentBooksChanged);
     _loadRecent();
     _loadRecommended();
   }
 
+  void _onRecentBooksChanged() {
+    if (mounted) _loadRecent();
+  }
+
+  @override
+  void dispose() {
+    RecentBooksRepository.changes.removeListener(_onRecentBooksChanged);
+    _searchDebounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onHomeSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    final query = value.trim();
+
+    if (query.isEmpty) {
+      _searchRequestId++;
+      setState(() {
+        _searchQuery = '';
+        _homeSearchResults = [];
+        _isHomeSearching = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _searchQuery = value;
+      _isHomeSearching = true;
+      _homeSearchResults = [];
+    });
+
+    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
+      _searchHomeBooks(query);
+    });
+  }
+
+  Future<void> _searchHomeBooks(String query) async {
+    final requestId = ++_searchRequestId;
+    try {
+      // نفس مصدر البحث المستخدم في بقية التطبيق.
+      final books = await _repo.search(query, pageSize: 20);
+      if (!mounted || requestId != _searchRequestId ||
+          _searchController.text.trim() != query) {
+        return;
+      }
+      setState(() {
+        _homeSearchResults = books.map(BookItem.fromBook).toList();
+        _isHomeSearching = false;
+      });
+    } catch (_) {
+      if (!mounted || requestId != _searchRequestId) return;
+      setState(() {
+        _homeSearchResults = [];
+        _isHomeSearching = false;
+      });
+    }
+  }
+
+  Widget _homeSearchResultsSection() {
+    if (_isHomeSearching) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 36),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_homeSearchResults.isEmpty) {
+      return _booksMessage('مفيش نتائج للبحث ده، جرّب كلمة تانية');
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        children: _homeSearchResults.map((book) {
+          final isFavorite = favoriteBooks.contains(book.id);
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(10),
+              leading: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: SizedBox(
+                  width: 58,
+                  height: 78,
+                  child: _bookCover(book.image),
+                ),
+              ),
+              title: Text(
+                book.title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: AppTheme.fontFamily,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 5),
+                child: Text(
+                  book.author,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: AppTheme.fontFamily,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ),
+              trailing: IconButton(
+                tooltip: isFavorite ? 'إزالة من المفضلة' : 'إضافة للمفضلة',
+                onPressed: () {
+                  setState(() {
+                    if (isFavorite) {
+                      favoriteBooks.remove(book.id);
+                    } else {
+                      favoriteBooks.add(book.id);
+                    }
+                  });
+                },
+                icon: Icon(
+                  isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: isFavorite ? Colors.red : Colors.grey,
+                ),
+              ),
+              onTap: () => _openBookDetails(book),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
   Future<void> _load(
       _BooksState state,
-      Future<List<BookItem>> Function() fetch,
+      Future<List<Book>> Function() fetch,
       ) async {
     setState(() {
       state.isLoading = true;
@@ -136,7 +236,8 @@ class _home_screenState extends State<home_screen> {
     });
 
     try {
-      final items = await fetch();
+      final result = await fetch();
+      final items = result.map(BookItem.fromBook).toList();
       if (!mounted) return;
       setState(() {
         state.items = items;
@@ -154,16 +255,23 @@ class _home_screenState extends State<home_screen> {
     }
   }
 
-  Future<void> _loadRecent() => _load(recent, _repo.getRecentBooks);
+  Future<void> _loadRecent() => _load(
+    recent,
+    // سجل الكتب التي فتحها المستخدم فعلياً، محفوظ محلياً على الجهاز.
+    () => RecentBooksRepository().getRecentBooks(),
+  );
 
-  Future<void> _loadRecommended() =>
-      _load(recommended, _repo.getRecommendedBooks);
+  Future<void> _loadRecommended() => _load(
+    recommended,
+    // نبدأ بتصنيف الروايات، ويمكن تغييره من الفلتر.
+        () => _repo.byCategory('Fiction'),
+  );
 
   Future<void> _refreshAll() =>
       Future.wait([_loadRecent(), _loadRecommended()]);
 
   // ===== فلتر =====
-  List<String> Types = [
+  final List<String> types = const [
     'الكل',
     'رواية',
     'رومانسي',
@@ -176,17 +284,43 @@ class _home_screenState extends State<home_screen> {
   int currentIndex = 0;
   int currentReadingStatus = 0;
 
-  final List<String> readingTypes = [
+  final List<String> readingTypes = const [
     'الكل',
     'أريد قراءته',
     'أقرأ حالياً',
     'مكتمل',
   ];
 
+  List<BookItem> _filterBooks(List<BookItem> books) {
+    final selectedCategory = types[currentIndex];
+
+    return books.where((book) {
+      final categoryMatches = selectedCategory == 'الكل' ||
+          _categoryMatches(book.category, selectedCategory);
+      // Book model الحالي لا يحتوي حالة القراءة؛ لذلك لا نُخفي نتائج API
+      // اعتماداً على حالة غير متوفرة في البيانات. يظل اختيار الحالة محفوظاً للربط لاحقاً.
+      return categoryMatches;
+    }).toList();
+  }
+
+  bool _categoryMatches(String bookCategory, String selectedCategory) {
+    final category = bookCategory.toLowerCase();
+    const aliases = <String, List<String>>{
+      'رواية': ['fiction', 'novel', 'رواية'],
+      'رومانسي': ['romance', 'romantic', 'رومانسي'],
+      'غموض': ['mystery', 'thriller', 'غموض'],
+      'فانتازيا': ['fantasy', 'فانتازيا'],
+      'تطوير ذات': ['self-help', 'self help', 'تطوير ذات'],
+      'تكنولوجيا': ['technology', 'computers', 'تكنولوجيا'],
+    };
+    if (selectedCategory == 'الكل') return true;
+    final terms = aliases[selectedCategory] ?? [selectedCategory.toLowerCase()];
+    return terms.any(category.contains);
+  }
+
   // ===== Navigation =====
   void _openBookDetails(BookItem book) {
-    // غيّر AppRoutes.bookDetails لاسم الراوت عندك في app_router.dart
-    context.push(AppRoutes.bookDetails, extra: book);
+    context.push(AppRoutes.bookPath(book.id));
   }
 
   void _openSearch() {
@@ -275,15 +409,23 @@ class _home_screenState extends State<home_screen> {
     );
   }
 
-  // ===== سيكشن الكتب (تحميل / خطأ / فاضي / داتا) =====
   Widget _booksSection(_BooksState state, VoidCallback onRetry) {
     if (state.isLoading) return _booksLoading();
     if (state.error != null) {
       return _booksMessage(state.error!, onRetry: onRetry);
     }
-    if (state.items.isEmpty) return _booksMessage('لا توجد كتب حالياً');
+    if (state.items.isEmpty) {
+      return _booksMessage(
+        identical(state, recent)
+            ? 'لسه مفيش كتب اتصفحت. افتح أي كتاب وهتلاقيه هنا.'
+            : 'لا توجد كتب حالياً',
+      );
+    }
 
-    final books = state.items;
+    final books = _filterBooks(state.items);
+    if (books.isEmpty) {
+      return _booksMessage('مفيش كتب مطابقة للفلاتر المختارة');
+    }
     // عرض الرف = من أول كتاب لحد آخر كتاب بالظبط
     final shelfWidth =
         books.length * _bookWidth + (books.length - 1) * _bookGap;
@@ -294,34 +436,39 @@ class _home_screenState extends State<home_screen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // الفريمات
-          Row(
-            children: [
-              for (int i = 0; i < books.length; i++) ...[
-                if (i != 0) const SizedBox(width: _bookGap),
-                bookImage(books[i]),
-              ],
-            ],
-          ),
-
-          // الرف (بيبدأ من أول كتاب وينتهي عند آخر كتاب)
-          SizedBox(
-            width: shelfWidth,
-            height: 10,
-            child: Image.asset('assets/images/roof2.png', fit: BoxFit.fill),
-          ),
-
-          const SizedBox(height: 10),
-
-          // العناوين والمؤلفين
+          // BookCard يتولى تحميل الغلاف من الإنترنت أو assets تلقائياً.
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               for (int i = 0; i < books.length; i++) ...[
                 if (i != 0) const SizedBox(width: _bookGap),
-                _bookInfo(books[i]),
+                SizedBox(
+                  width: _bookWidth,
+                  child: BookCard(
+                    title: books[i].title,
+                    author: books[i].author,
+                    coverAsset: books[i].image,
+                    isFavorite: favoriteBooks.contains(books[i].id),
+                    onTap: () => _openBookDetails(books[i]),
+                    onFavoriteTap: () {
+                      setState(() {
+                        if (!favoriteBooks.add(books[i].id)) {
+                          favoriteBooks.remove(books[i].id);
+                        }
+                      });
+                    },
+                  ),
+                ),
               ],
             ],
+          ),
+
+          const SizedBox(height: 8),
+          // الرف (بيبدأ من أول كتاب وينتهي عند آخر كتاب)
+          SizedBox(
+            width: shelfWidth,
+            height: 10,
+            child: Image.asset('assets/images/roof2.png', fit: BoxFit.fill),
           ),
         ],
       ),
@@ -469,7 +616,7 @@ class _home_screenState extends State<home_screen> {
       isScrollControlled: true,
       builder: (context) {
         int selectedType = currentIndex;
-        int selectedReadingStatus = 0;
+        int selectedReadingStatus = currentReadingStatus;
 
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -580,7 +727,7 @@ class _home_screenState extends State<home_screen> {
                               textDirection: TextDirection.rtl,
                               spacing: 6,
                               runSpacing: 8,
-                              children: List.generate(Types.length, (index) {
+                              children: List.generate(types.length, (index) {
                                 final isSelected = selectedType == index;
                                 return ElevatedButton(
                                   onPressed: () {
@@ -589,7 +736,7 @@ class _home_screenState extends State<home_screen> {
                                     });
                                   },
                                   style: filterButtonStyle(isSelected),
-                                  child: Text(Types[index]),
+                                  child: Text(types[index]),
                                 );
                               }),
                             ),
@@ -769,6 +916,9 @@ class _home_screenState extends State<home_screen> {
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: TextField(
+                            controller: _searchController,
+                            onChanged: _onHomeSearchChanged,
+                            textInputAction: TextInputAction.search,
                             decoration: InputDecoration(
                               filled: true,
                               fillColor: Colors.white,
@@ -777,6 +927,16 @@ class _home_screenState extends State<home_screen> {
                               ),
                               hintText: 'ابحث عن كتاب او مؤلف ...',
                               prefixIcon: const Icon(Icons.search),
+                              suffixIcon: _searchController.text.isNotEmpty
+                                  ? IconButton(
+                                      tooltip: 'مسح البحث',
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        _onHomeSearchChanged('');
+                                      },
+                                      icon: const Icon(Icons.close),
+                                    )
+                                  : null,
                             ),
                           ),
                         ),
@@ -795,7 +955,12 @@ class _home_screenState extends State<home_screen> {
                           ),
                           child: IconButton(
                             onPressed: _showFilterSheet,
-                            icon: const Icon(Icons.filter_list),
+                            tooltip: 'فلترة الكتب',
+                            icon: Icon(
+                              currentIndex != 0 || currentReadingStatus != 0
+                                  ? Icons.filter_alt
+                                  : Icons.filter_list,
+                            ),
                             color: Colors.black,
                             iconSize: 28,
                           ),
@@ -804,216 +969,236 @@ class _home_screenState extends State<home_screen> {
                     ],
                   ),
 
-                  // ===== البانر =====
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFF74503B), Color(0xFF2B1D15)],
+                  if (_searchQuery.trim().isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(top: 18, right: 18, left: 18),
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: Text(
+                          'نتائج البحث',
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontFamily,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
-                        borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            margin: const EdgeInsets.only(top: 14, right: 18),
-                            alignment: Alignment.topRight,
-                            child: Text(
-                              'مجموعتك تبدأ من هنا',
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontFamily,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                                color: const Color(0xFFBF6428),
+                    ),
+                    _homeSearchResultsSection(),
+                    const SizedBox(height: 16),
+                  ] else ...[
+                    // ===== البانر =====
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFF74503B), Color(0xFF2B1D15)],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              margin: const EdgeInsets.only(top: 14, right: 18),
+                              alignment: Alignment.topRight,
+                              child: Text(
+                                'مجموعتك تبدأ من هنا',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  fontFamily: AppTheme.fontFamily,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                  color: const Color(0xFFBF6428),
+                                ),
                               ),
                             ),
-                          ),
 
-                          const SizedBox(height: 22),
+                            const SizedBox(height: 22),
 
-                          Container(
-                            margin: const EdgeInsets.only(right: 12),
-                            alignment: Alignment.topRight,
-                            child: Text(
-                              'رحلتك مع القراءة تبدأ هنا',
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontFamily,
-                                fontSize: 26,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                            Container(
+                              margin: const EdgeInsets.only(right: 12),
+                              alignment: Alignment.topRight,
+                              child: Text(
+                                'رحلتك مع القراءة تبدأ هنا',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  fontFamily: AppTheme.fontFamily,
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
-                          ),
 
-                          const SizedBox(height: 6),
+                            const SizedBox(height: 6),
 
-                          Container(
-                            margin: const EdgeInsets.only(right: 12),
-                            alignment: Alignment.topRight,
-                            child: Text(
-                              'اكتشف حكايتك القادمة',
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                fontFamily: AppTheme.fontFamily,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white.withOpacity(0.5),
+                            Container(
+                              margin: const EdgeInsets.only(right: 12),
+                              alignment: Alignment.topRight,
+                              child: Text(
+                                'اكتشف حكايتك القادمة',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  fontFamily: AppTheme.fontFamily,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white.withOpacity(0.5),
+                                ),
                               ),
                             ),
-                          ),
 
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Expanded(
-                                child: Align(
-                                  alignment: Alignment.bottomRight,
-                                  child: Padding(
-                                    padding: const EdgeInsets.only(
-                                      right: 12,
-                                      bottom: 8,
-                                    ),
-                                    // ===== زر "اكتشف الكتب" → صفحة search =====
-                                    child: GestureDetector(
-                                      onTap: _openSearch,
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 8,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFFCF8EE),
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                        child: Text(
-                                          'اكتشف الكتب',
-                                          style: TextStyle(
-                                            fontFamily: AppTheme.fontFamily,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: const Color(0xFF2B1D15),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Expanded(
+                                  child: Align(
+                                    alignment: Alignment.bottomRight,
+                                    child: Padding(
+                                      padding: const EdgeInsets.only(
+                                        right: 12,
+                                        bottom: 8,
+                                      ),
+                                      // ===== زر "اكتشف الكتب" → صفحة search =====
+                                      child: GestureDetector(
+                                        onTap: _openSearch,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 8,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFFCF8EE),
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Text(
+                                            'اكتشف الكتب',
+                                            style: TextStyle(
+                                              fontFamily: AppTheme.fontFamily,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: const Color(0xFF2B1D15),
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.only(
-                                  left: 12,
-                                  right: 8,
-                                  bottom: 8,
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: 12,
+                                    right: 8,
+                                    bottom: 8,
+                                  ),
+                                  child: Image.asset(
+                                    'assets/images/book.png',
+                                    width: 140,
+                                    height: 100,
+                                    fit: BoxFit.contain,
+                                    alignment: Alignment.bottomCenter,
+                                  ),
                                 ),
-                                child: Image.asset(
-                                  'assets/images/book.png',
-                                  width: 140,
-                                  height: 100,
-                                  fit: BoxFit.contain,
-                                  alignment: Alignment.bottomCenter,
-                                ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
 
-                          const SizedBox(height: 8),
+                            const SizedBox(height: 8),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // ===== آخر ما تصفحت =====
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'آخر ما تصفحت ',
+                            style: TextStyle(
+                              fontFamily: AppTheme.fontFamily,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              context.push(
+                                AppRoutes.search,
+                                extra: BookSection.recent,
+                              );
+                            },
+                            child: Text(
+                              'عرض الكل',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontFamily,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.primaryDark,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 10),
+                    const SizedBox(height: 6),
 
-                  // ===== آخر ما تصفحت =====
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 18),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'آخر ما تصفحت ',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontFamily,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            context.push(
-                              AppRoutes.search,
-                              extra: BookSection.recent,
-                            );
-                          },
-                          child: Text(
-                            'عرض الكل',
+                    _booksSection(recent, _loadRecent),
+
+                    const SizedBox(height: 16),
+
+                    // ===== قد يعجبك =====
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'قد يعجبك ',
                             style: TextStyle(
                               fontFamily: AppTheme.fontFamily,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.primaryDark,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  _booksSection(recent, _loadRecent),
-
-                  const SizedBox(height: 16),
-
-                  // ===== قد يعجبك =====
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 18),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'قد يعجبك ',
-                          style: TextStyle(
-                            fontFamily: AppTheme.fontFamily,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            context.push(
-                              AppRoutes.search,
-                              extra: BookSection.recommended,
-                            );
-                          },
-                          child: Text(
-                            'عرض الكل',
-                            style: TextStyle(
-                              fontFamily: AppTheme.fontFamily,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.primaryDark,
+                          GestureDetector(
+                            onTap: () {
+                              context.push(
+                                AppRoutes.search,
+                                extra: BookSection.recommended,
+                              );
+                            },
+                            child: Text(
+                              'عرض الكل',
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontFamily,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.primaryDark,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(height: 10),
+                    const SizedBox(height: 10),
 
-                  _booksSection(recommended, _loadRecommended),
+                    _booksSection(recommended, _loadRecommended),
 
-                  const SizedBox(height: 16),
+                    const SizedBox(height: 16),
+                  ]
                 ],
               ),
             ),
