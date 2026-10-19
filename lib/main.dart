@@ -7,8 +7,10 @@ import 'package:raffi/providers/history_provider.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'data/book_repository.dart';
-import 'features/favorites/favorites_provider.dart';
+import 'providers/favorites_provider.dart';
 import 'providers/library_provider.dart';
+
+
 
 void main() {
   runApp(
@@ -19,7 +21,7 @@ void main() {
           create: (_) => LibraryProvider()..loadLibrary(),
         ),
         ChangeNotifierProvider(create: (_) => FavoritesProvider()),
-        ChangeNotifierProvider(create: (_) => HistoryProvider())
+        ChangeNotifierProvider(create: (_) => HistoryProvider()..loadHistory()),
       ],
       child: const RaffiApp(),
     ),
