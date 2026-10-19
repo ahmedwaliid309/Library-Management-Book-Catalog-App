@@ -9,6 +9,7 @@ import 'widgets/favorites_empty_state.dart';
 import 'widgets/favorites_header.dart';
 import 'widgets/favorites_shelf.dart';
 
+
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
 
@@ -32,7 +33,7 @@ class FavoritesScreen extends StatelessWidget {
                   : books.isEmpty
                   ? FavoritesEmptyState(
                 onDiscover: () =>
-                    context.go(AppRoutes.home),
+                    context.go(AppRoutes.search),
               )
                   : FavoritesShelf(
                 books: books,
