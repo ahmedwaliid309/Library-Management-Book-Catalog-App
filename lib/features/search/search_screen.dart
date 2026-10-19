@@ -11,8 +11,6 @@ import 'package:raffi/core/widgets/book_card.dart';
 import 'package:raffi/data/book_repository.dart';
 import 'package:raffi/data/book_section.dart';
 import 'package:raffi/data/models/book.dart';
-import 'package:raffi/providers/favorites_provider.dart';
-import 'package:raffi/providers/history_provider.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key, this.section = BookSection.recent});
@@ -25,22 +23,23 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   static const _debounceDuration = Duration(milliseconds: 500);
+
   final _controller = TextEditingController();
   Timer? _debounce;
 
   /// الكلمة اللي بتتبحث دلوقتي. فاضية = كتب القسم الافتراضية.
   String _query = '';
-  Future<List<Book>> _booksFuture = Future.value(const <Book>[]);
+  late Future<List<Book>> _booksFuture;
+
   OutlineInputBorder get _noBorder => OutlineInputBorder(
-    borderRadius: BorderRadius.circular(12.r),
-    borderSide: BorderSide.none,
-  );
+        borderRadius: BorderRadius.circular(12.r),
+        borderSide: BorderSide.none,
+      );
 
   @override
   void initState() {
     super.initState();
-    // لو هنعرض السجل مفيش داعي لطلب نت
-    if (!_showHistory) _booksFuture = _load();
+    _booksFuture = _load(); // الطلب الأول مرة واحدة
   }
 
   @override
@@ -53,10 +52,6 @@ class _SearchScreenState extends State<SearchScreen> {
   // TODO: "آخر ما تصفحت" تيجي من HistoryProvider (سارة) لما يجهز
   String get _defaultQuery =>
       widget.section == BookSection.recent ? 'روايات' : 'أدب';
-
-  /// قسم "آخر ما تصفحت" والحقل فاضي: بنعرض السجل بدل البحث
-  bool get _showHistory =>
-      widget.section == BookSection.recent && _query.isEmpty;
 
   Future<List<Book>> _load() {
     final repo = context.read<BookRepository>();
@@ -83,7 +78,7 @@ class _SearchScreenState extends State<SearchScreen> {
     if (q == _query) return; // نفس الكلمة، مفيش داعي لطلب جديد
     setState(() {
       _query = q;
-      _booksFuture = _showHistory ? Future.value(const <Book>[]) : _load();
+      _booksFuture = _load();
     });
   }
 
@@ -239,10 +234,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   // تحميل / خطأ / لا نتايج / النتايج
-  // سجل التصفح / تحميل / خطأ / لا نتايج / النتايج
   Widget _buildResults() {
-    if (_showHistory) return _buildHistory();
-
     return FutureBuilder<List<Book>>(
       future: _booksFuture,
       builder: (context, snapshot) {
@@ -274,43 +266,25 @@ class _SearchScreenState extends State<SearchScreen> {
           );
         }
 
-        return _booksGrid(books);
-      },
-    );
-  }
-
-  // الكتب اللي المستخدم فتحها قبل كده (من HistoryProvider)
-  Widget _buildHistory() {
-    final history = context.watch<HistoryProvider>();
-
-    if (!history.isInitialized) {
-      return const _StatusView(loading: true, title: 'جاري التحميل...');
-    }
-
-    final books = history.recentBooks;
-    if (books.isEmpty) {
-      return const _StatusView(
-        icon: Icons.history,
-        title: 'لم تتصفح أي كتاب بعد',
-        message: 'الكتب اللي هتفتحها هتظهر هنا',
-      );
-    }
-
-    return _booksGrid(books);
-  }
-
-  Widget _booksGrid(List<Book> books) {
-    return GridView.builder(
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      itemCount: books.length,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16.w,
-        mainAxisSpacing: 16.h,
-        childAspectRatio: 0.55,
-      ),
-      itemBuilder: (context, index) {
-        return _SearchBookItem(book: books[index]);
+        return GridView.builder(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          itemCount: books.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 16.w,
+            mainAxisSpacing: 16.h,
+            childAspectRatio: 0.55,
+          ),
+          itemBuilder: (context, index) {
+            final book = books[index];
+            return BookCard(
+              title: book.title,
+              author: book.author,
+              coverAsset: book.coverAsset,
+              onTap: () => context.push(AppRoutes.bookPath(book.id)),
+            );
+          },
+        );
       },
     );
   }
@@ -380,30 +354,6 @@ class _StatusView extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-/// كارت كتاب في نتايج البحث: القلب مربوط بالمفضلة والضغط يفتح التفاصيل.
-class _SearchBookItem extends StatelessWidget {
-  const _SearchBookItem({required this.book});
-
-  final Book book;
-
-  @override
-  Widget build(BuildContext context) {
-    // الكارت ده بس هو اللي يتحدث لما قلب كتابه يتغير
-    final isFav = context.select<FavoritesProvider, bool>(
-      (favorites) => favorites.isFavorite(book.id),
-    );
-
-    return BookCard(
-      title: book.title,
-      author: book.author,
-      coverAsset: book.coverAsset,
-      isFavorite: isFav,
-      onFavoriteTap: () => context.read<FavoritesProvider>().toggle(book),
-      onTap: () => context.push(AppRoutes.bookPath(book.id)),
     );
   }
 }
