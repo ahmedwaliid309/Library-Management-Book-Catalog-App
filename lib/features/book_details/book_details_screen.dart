@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:raffi/providers/library_provider.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
@@ -11,9 +12,10 @@ import '../../data/book_repository.dart';
 import '../../data/models/book.dart';
 import '../../core/widgets/loading_view.dart';
 import '../../core/widgets/error_view.dart';
+import 'package:raffi/providers/favorites_provider.dart';
+import 'package:provider/provider.dart';
 
-import 'package:raffi/providers/library_provider.dart';
-import 'package:raffi/features/favorites/favorites_provider.dart';
+
 
 class BookDetailsScreen extends StatefulWidget {
   const BookDetailsScreen({
