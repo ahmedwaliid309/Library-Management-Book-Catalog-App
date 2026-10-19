@@ -1,7 +1,7 @@
-﻿
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
@@ -43,8 +43,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  // هنا بننقل المستخدم للصفحة التالية، ولو وصل لآخر صفحة
-  // بنوجّهه للصفحة الرئيسية.
+// هنا بنحفظ إن المستخدم خلّص شاشة الـ Onboarding.
+  Future<void> _completeOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // هنا بنحفظ الحالة محليًا علشان تفضل موجودة بعد إغلاق التطبيق.
+    await prefs.setBool('hasSeenOnboarding', true);
+
+    if (!mounted) return;
+
+    context.go(AppRoutes.home);
+  }
+
+// هنا بننقل المستخدم للصفحة التالية، أو نحفظ الإكمال عند آخر صفحة.
   void _nextPage() {
     if (_currentPage < _pages.length - 1) {
       _pageController.nextPage(
@@ -52,7 +63,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      context.go(AppRoutes.home);
+      _completeOnboarding();
     }
   }
 
@@ -73,7 +84,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       TextButton(
-                        onPressed: () => context.go(AppRoutes.home),
+                        onPressed: _completeOnboarding,
                         child: Text(
                           'تخطي',
                           style: TextStyle(
