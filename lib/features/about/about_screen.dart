@@ -7,7 +7,7 @@ import '../../core/theme/app_colors.dart';
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
-  // أسماء أعضاء فريق رفّي بالترتيب.
+  // هنا جمعنا أسماء أعضاء فريق رفّي في قائمة واحدة.
   static const List<String> teamMembers = [
     'معاذ أحمد',
     'أحمد وليد',
@@ -20,7 +20,6 @@ class AboutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Directionality(
-      // نخلي اتجاه الشاشة من اليمين للشمال.
       textDirection: TextDirection.rtl,
       child: SafeArea(
         child: SingleChildScrollView(
@@ -33,27 +32,38 @@ class AboutScreen extends StatelessWidget {
                 'عن',
                 textAlign: TextAlign.center,
                 style: TextStyle(
+                  fontFamily: 'Tajawal',
                   fontSize: 20.sp,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
                 ),
               ),
 
-              SizedBox(height: 4.h),
+              SizedBox(height: 2.h),
 
-              // لوجو تطبيق رفّي.
-              Center(
-                child: Image.asset(
-                  'assets/images/raffi.png',
-                  width: 120.w,
-                  height: 85.h,
-                  fit: BoxFit.contain,
+
+              // هنا بنكبّر محتوى اللوجو ونقص الفراغات الزائدة حوله.
+              SizedBox(
+                width: double.infinity,
+                height: 145.h,
+                child: ClipRect(
+                  child: OverflowBox(
+                    alignment: Alignment.center,
+                    minHeight: 240.h,
+                    maxHeight: 240.h,
+                    child: Image.asset(
+                      'assets/images/raffi.png',
+                      width: double.infinity,
+                      height: 240.h,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
               ),
 
-              SizedBox(height: 18.h),
+              SizedBox(height: 12.h),
 
-              // بطاقة تعريف التطبيق.
+              // بطاقة تعريف المشروع.
               Container(
                 padding: EdgeInsets.symmetric(
                   horizontal: 22.w,
@@ -62,7 +72,7 @@ class AboutScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [
-                      AppColors.textPrimary,
+                      Color(0xFF444444),
                       Color(0xFF130C08),
                     ],
                     begin: Alignment.centerLeft,
@@ -73,7 +83,6 @@ class AboutScreen extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // علامة الاقتباس للزينة.
                     Text(
                       '“',
                       style: TextStyle(
@@ -82,17 +91,13 @@ class AboutScreen extends StatelessWidget {
                         color: const Color(0xFF8A4D31),
                       ),
                     ),
-
                     SizedBox(width: 8.w),
-
-                    // نبذة عن التطبيق.
                     Expanded(
                       child: Text(
-                        'رفّي هو مشروع بيجمع الكتب اللي بتحبها '
-                            'في مكتبة رقمية واحدة، ويساعدك تكتشف '
-                            'قراءات جديدة.',
+                        'رفّي هو مشروع بيجمع الكتب اللي بتحبها في مكتبة رقمية واحدة، ويساعدك تكتشف قراءات جديدة.',
                         textAlign: TextAlign.right,
                         style: TextStyle(
+                          fontFamily: 'Tajawal',
                           fontSize: 14.sp,
                           height: 1.35,
                           fontWeight: FontWeight.w500,
@@ -106,7 +111,7 @@ class AboutScreen extends StatelessWidget {
 
               SizedBox(height: 28.h),
 
-              // عنوان قسم الفريق وعدد الأعضاء.
+              // عنوان فريق العمل وعدد الأعضاء.
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -114,15 +119,16 @@ class AboutScreen extends StatelessWidget {
                   Text(
                     'فريق العمل',
                     style: TextStyle(
+                      fontFamily: 'Tajawal',
                       fontSize: 20.sp,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                     ),
                   ),
-
                   Text(
                     '${teamMembers.length} أعضاء',
                     style: TextStyle(
+                      fontFamily: 'Tajawal',
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w500,
                       color: const Color(0xFF5C4031),
@@ -133,7 +139,7 @@ class AboutScreen extends StatelessWidget {
 
               SizedBox(height: 16.h),
 
-              // عرض الأعضاء في عمودين.
+              // كروت الفريق: الرقم على اليمين والاسم بمحاذاة قريبة منه.
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -145,7 +151,6 @@ class AboutScreen extends StatelessWidget {
                   mainAxisExtent: 60.h,
                 ),
                 itemBuilder: (context, index) {
-                  // رقم العضو يبدأ من 1 بدل 0.
                   final number = index + 1;
 
                   return Container(
@@ -157,48 +162,13 @@ class AboutScreen extends StatelessWidget {
                       color: AppColors.surface,
                       borderRadius: BorderRadius.circular(14.r),
                       border: Border.all(
-                        color: AppColors.textPrimary.withValues(
-                          alpha: 0.10,
-                        ),
+                        color: AppColors.textPrimary.withValues(alpha: 0.10),
                         width: 0.6,
                       ),
                     ),
                     child: Row(
                       children: [
-                        // اسم العضو والوصف.
-                        Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                teamMembers[index],
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.right,
-                                style: TextStyle(
-                                  fontSize: 13.sp,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-
-                              SizedBox(height: 3.h),
-
-                              Text(
-                                'فريق رفّي',
-                                style: TextStyle(
-                                  fontSize: 10.sp,
-                                  color: const Color(0xFF5C4031),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        SizedBox(width: 10.w),
-
-                        // دائرة رقم العضو.
+                        // في اتجاه RTL، أول عنصر يظهر على اليمين.
                         Container(
                           width: 38.w,
                           height: 38.w,
@@ -210,12 +180,47 @@ class AboutScreen extends StatelessWidget {
                           child: Text(
                             '$number',
                             style: TextStyle(
+                              fontFamily: 'Tajawal',
                               fontSize: 16.sp,
                               fontWeight: FontWeight.w700,
                               color: number == 3 || number == 6
                                   ? AppColors.background
                                   : AppColors.textPrimary,
                             ),
+                          ),
+                        ),
+
+                        SizedBox(width: 8.w),
+
+                        // هنا قرّبنا الاسم من الدائرة بمحاذاته ناحية اليمين.
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                teamMembers[index],
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  fontFamily: 'Tajawal',
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              SizedBox(height: 3.h),
+                              Text(
+                                'فريق رفّي',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                  fontFamily: 'Tajawal',
+                                  fontSize: 10.sp,
+                                  color: const Color(0xFF5C4031),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -226,8 +231,9 @@ class AboutScreen extends StatelessWidget {
 
               SizedBox(height: 24.h),
 
-              // Footer الخاص بالمشروع.
+              // قسم DEPI: النص يبدأ من اليمين وصورة الكتاب على الشمال.
               Container(
+                width: double.infinity,
                 padding: EdgeInsets.only(
                   top: 14.h,
                   bottom: 10.h,
@@ -235,50 +241,50 @@ class AboutScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   border: Border(
                     top: BorderSide(
-                      color: AppColors.textPrimary.withValues(
-                        alpha: 0.10,
-                      ),
+                      color: AppColors.textPrimary.withValues(alpha: 0.10),
                     ),
                   ),
                 ),
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // أيقونة الكتب.
-                    Icon(
-                      Icons.auto_stories_outlined,
-                      size: 40.sp,
-                      color: AppColors.shelf,
-                    ),
-
-                    SizedBox(width: 12.w),
-
-                    // اسم المشروع والوصف.
+                    // النص أولًا، لذلك يظهر على اليمين في اتجاه RTL.
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'مشروع Flutter — DEPI',
                             textAlign: TextAlign.right,
                             style: TextStyle(
-                              fontSize: 12.sp,
+                              fontFamily: 'Tajawal',
+                              fontSize: 15.sp,
                               fontWeight: FontWeight.w700,
                               color: AppColors.textPrimary,
                             ),
                           ),
-
                           SizedBox(height: 5.h),
-
                           Text(
                             'صُنع بشغف للكتب والقراءة',
                             textAlign: TextAlign.right,
                             style: TextStyle(
-                              fontSize: 10.sp,
+                              fontFamily: 'Tajawal',
+                              fontSize: 12.sp,
                               color: const Color(0xFF866C5B),
                             ),
                           ),
                         ],
                       ),
+                    ),
+
+                    SizedBox(width: 12.w),
+
+                    // صورة الكتاب في نهاية الـ Row، أي على الشمال في RTL.
+                    Image.asset(
+                      'assets/images/boo3x.png',
+                      width: 54.w,
+                      height: 38.h,
+                      fit: BoxFit.contain,
                     ),
                   ],
                 ),
@@ -290,17 +296,15 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
-  // تحديد لون دائرة كل عضو.
+  // هنا حددنا ألوان دوائر أعضاء الفريق حسب رقم كل عضو.
   static Color _memberColor(int number) {
     switch (number) {
       case 3:
       case 6:
         return const Color(0xFF5C4031);
-
       case 1:
       case 4:
         return const Color(0xFFF4E2D4);
-
       case 2:
       case 5:
       default:
@@ -308,4 +312,3 @@ class AboutScreen extends StatelessWidget {
     }
   }
 }
-

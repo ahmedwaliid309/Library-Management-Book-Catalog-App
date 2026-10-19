@@ -1,7 +1,7 @@
-﻿
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import '../splash/onboarding_preferences.dart';
 
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_colors.dart';
@@ -43,6 +43,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
+  Future<void> _completeOnboarding() async {
+    await OnboardingPreferences().setOnboardingCompleted();
+
+    if (!mounted) return;
+
+    context.go(AppRoutes.home);
+  }
+
   // هنا بننقل المستخدم للصفحة التالية، ولو وصل لآخر صفحة
   // بنوجّهه للصفحة الرئيسية.
   void _nextPage() {
@@ -52,7 +60,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.easeInOut,
       );
     } else {
-      context.go(AppRoutes.home);
+      _completeOnboarding();
     }
   }
 
@@ -73,7 +81,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       TextButton(
-                        onPressed: () => context.go(AppRoutes.home),
+                        onPressed: _completeOnboarding,
                         child: Text(
                           'تخطي',
                           style: TextStyle(
@@ -85,8 +93,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                       Image.asset(
                         'assets/images/raffi.png',
-                        width: 75.w,
-                        height: 42.h,
+                        width: 90.w,
+                        height: 48.h,
                         fit: BoxFit.contain,
                         // هنا بنعرض اللوجو، ولو حصل خطأ بنعرض نص بديل.
                         errorBuilder: (context, error, stackTrace) => Text(

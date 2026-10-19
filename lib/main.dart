@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+import 'package:raffi/providers/history_provider.dart';
 
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
@@ -27,7 +28,6 @@ class RaffiApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ScreenUtilInit(
-      // حجم الـ Frame في Figma
       designSize: const Size(390, 844),
       minTextAdapt: true,
       splitScreenMode: true,
@@ -36,7 +36,6 @@ class RaffiApp extends StatelessWidget {
           title: 'رفّي',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light,
-          // التطبيق عربي RTL في كل الشاشات
           locale: const Locale('ar'),
           supportedLocales: const [Locale('ar')],
           localizationsDelegates: const [

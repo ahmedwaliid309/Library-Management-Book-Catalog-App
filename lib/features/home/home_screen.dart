@@ -12,6 +12,50 @@ import 'package:raffi/data/book_section.dart';
 import 'package:raffi/data/mock_books.dart';
 import 'package:raffi/features/favorites/favorites_provider.dart';
 
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
+
+import 'package:provider/provider.dart';
+import 'package:raffi/data/book_repository.dart';
+import 'package:raffi/data/models/book.dart';
+import 'package:raffi/data/recent_books_repository.dart';
+import 'package:raffi/core/widgets/book_card.dart';
+
+class BookItem {
+  final String id;
+  final String image;
+  final String title;
+  final String author;
+  final String category;
+  final String readingStatus;
+  final bool isFavorite;
+
+  const BookItem({
+    required this.id,
+    required this.image,
+    required this.title,
+    required this.author,
+    this.category = '',
+    this.readingStatus = 'الكل',
+    this.isFavorite = false,
+  });
+
+  factory BookItem.fromBook(Book book) => BookItem(
+    id: book.id,
+    image: book.coverAsset,
+    title: book.title,
+    author: book.author,
+    category: book.category,
+  );
+}
+
+/// حالة كل سيكشن (تحميل / خطأ / داتا)
+class _BooksState {
+  List<BookItem> items = [];
+  bool isLoading = true;
+  String? error;
+}
+
 class home_screen extends StatefulWidget {
   const home_screen({super.key});
 
@@ -52,14 +96,22 @@ class _home_screenState extends State<home_screen> {
     context.watch<FavoritesProvider>().isFavorite(book.id);
 
     return SizedBox(
-      height: 150,
+      width: _bookWidth,
+      height: _bookHeight,
       child: Stack(
         children: [
-          Image.asset(
-            imagePath,
-            height: 150,
-            fit: BoxFit.contain,
+          // الفريم - قابل للضغط
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: () => _openBookDetails(book),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: _bookCover(book.image),
+              ),
+            ),
           ),
+
+          // زر المفضلة
           Positioned(
             top: 4,
             right: 4,
@@ -95,18 +147,13 @@ class _home_screenState extends State<home_screen> {
       foregroundColor:
       isSelected ? Colors.white : const Color(0xFF49372D),
       elevation: 0,
-      padding: const EdgeInsets.symmetric(
-        horizontal: 14,
-        vertical: 12,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       minimumSize: const Size(0, 44),
       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
         side: BorderSide(
-          color: isSelected
-              ? const Color(0xFFC46627)
-              : const Color(0xFFF0E9E0),
+          color: isSelected ? const Color(0xFFC46627) : const Color(0xFFF0E9E0),
         ),
       ),
       textStyle: TextStyle(
@@ -571,8 +618,66 @@ class _home_screenState extends State<home_screen> {
                                           ),
                                         ),
                                       ),
-                                    );
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                SizedBox(
+                                  width: 60,
+                                  height: 60,
+                                  child: OutlinedButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    style: OutlinedButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      backgroundColor: Colors.white,
+                                      side: const BorderSide(
+                                        color: Color(0xFFF0E9E0),
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                    ),
+                                    child: const Center(
+                                      child: Icon(
+                                        Icons.close,
+                                        color: Color(0xFF49372D),
+                                        size: 18,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 36),
+
+                            Text(
+                              'التصنيف',
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                fontFamily: AppTheme.fontFamily,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            Wrap(
+                              textDirection: TextDirection.rtl,
+                              spacing: 6,
+                              runSpacing: 8,
+                              children: List.generate(types.length, (index) {
+                                final isSelected = selectedType == index;
+                                return ElevatedButton(
+                                  onPressed: () {
+                                    setSheetState(() {
+                                      selectedType = index;
+                                    });
                                   },
+                                  style: filterButtonStyle(isSelected),
+                                  child: Text(types[index]),
                                 );
                               },
                             );
@@ -703,6 +808,13 @@ class _home_screenState extends State<home_screen> {
                     ),
                   ),
                 ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
                 const SizedBox(height: 10),
 
@@ -716,7 +828,7 @@ class _home_screenState extends State<home_screen> {
                         'آخر ما تصفحت ',
                         style: TextStyle(
                           fontFamily: AppTheme.fontFamily,
-                          fontSize: 24,
+                          fontSize: 26,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
                         ),
@@ -758,7 +870,6 @@ class _home_screenState extends State<home_screen> {
                       ],
                     ),
                   ),
-                ),
 
                 Container(
                   height: 10,
@@ -780,7 +891,6 @@ class _home_screenState extends State<home_screen> {
                       _bookInfo('قضية ست الحسن', 'ميرنا المهدي'),
                     ],
                   ),
-                ),
 
                 const SizedBox(height: 16),
 
@@ -807,12 +917,12 @@ class _home_screenState extends State<home_screen> {
                           );
                         },
                         child: Text(
-                          'عرض الكل',
+                          'نتائج البحث',
                           style: TextStyle(
                             fontFamily: AppTheme.fontFamily,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.primaryDark,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ),
