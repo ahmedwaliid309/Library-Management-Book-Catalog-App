@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:raffi/providers/history_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:raffi/data/book_repository.dart';
@@ -509,7 +510,11 @@ class _BottomSheetScreenState extends State<BottomSheetScreen> {
 // =========================================================
 
   Widget _buildRecentlyViewedBooks() {
-    if (_isLoadingInitialBooks && _recentBooks.isEmpty) {
+    final historyProvider = context.watch<HistoryProvider>();
+    final recentBooks = historyProvider.recentBooks;
+    final isLoading = !historyProvider.isInitialized;
+
+    if (isLoading && recentBooks.isEmpty) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(20),
@@ -518,7 +523,7 @@ class _BottomSheetScreenState extends State<BottomSheetScreen> {
       );
     }
 
-    if (_recentBooks.isEmpty) {
+    if (recentBooks.isEmpty) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 20),
         child: Center(
@@ -533,10 +538,10 @@ class _BottomSheetScreenState extends State<BottomSheetScreen> {
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: _recentBooks.length,
+      itemCount: recentBooks.length,
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
-        final book = _recentBooks[index];
+        final book = recentBooks[index];
         final isSelected = _selectedBook?.id == book.id;
         final colors = Theme.of(context).colorScheme;
 
