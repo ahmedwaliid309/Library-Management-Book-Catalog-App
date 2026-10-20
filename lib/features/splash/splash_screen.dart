@@ -28,7 +28,7 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
 
     final hasSeenOnboarding =
-      await OnboardingPreferences().hasSeenOnboarding();
+    await OnboardingPreferences().hasSeenOnboarding();
 
     if (!mounted) return;
 
@@ -39,37 +39,41 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-     return Scaffold(
-       body: Center(
-         child: Padding(
-           padding: EdgeInsetsGeometry.symmetric(vertical:77.r),
-           child: Column(
-             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-             children: [
-               SizedBox(
-                 width: double.infinity.w,
-                 height: 389.h,
-                 child: Image.asset('assets/images/raffi.png', fit:BoxFit.cover,),
-               ),
+    return Scaffold(
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 40.h),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              SizedBox(
+                width: double.infinity,
+                height: 389.h,
+                child: Image.asset(
+                  'assets/images/raffi.png',
+                  fit: BoxFit.cover,
+                ),
+              ),
 
-               SpinKitThreeBounce(
-                 color: AppColors.primary,
-                 size: 30.0,
-               ),
+              SpinKitThreeBounce(
+                color: AppColors.primary,
+                size: 30.0,
+              ),
 
-               SizedBox(
-                 width: 282.w,
-                 child: Column(
-                   mainAxisSize: MainAxisSize.min,
-                   children: [
-                     Image.asset('assets/images/ShelfIllustration.png'),
-                   ],
-                 ),
-               )
-             ],
-           ),
-         ),
-       ),
-     );
+              // Flexible عشان الصورة تصغر لو الشاشة قصيرة بدل ما يحصل overflow
+              Flexible(
+                child: SizedBox(
+                  width: 282.w,
+                  child: Image.asset(
+                    'assets/images/ShelfIllustration.png',
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

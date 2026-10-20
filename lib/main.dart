@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:raffi/providers/favorites_provider.dart';
 import 'package:raffi/providers/history_provider.dart';
+import 'package:raffi/providers/library_provider.dart';
 
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
@@ -15,6 +16,8 @@ void main() {
         Provider<BookRepository>(create: (_) => BookRepository()),
         // مؤقت للتجربة: الـ lead هو اللي هيضيفه رسمي
         ChangeNotifierProvider(create: (_) => FavoritesProvider()),
+        ChangeNotifierProvider(create: (_) => HistoryProvider()..loadHistory()),
+        ChangeNotifierProvider(create: (_) => LibraryProvider()..loadLibrary()),
       ],
       child: const RaffiApp(),
     ),

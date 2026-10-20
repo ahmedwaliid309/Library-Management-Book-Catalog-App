@@ -1,5 +1,5 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:raffi/core/theme/app_colors.dart';
 import 'package:raffi/core/theme/app_theme.dart';
@@ -155,7 +155,7 @@ class _FavoriteBookCard extends StatelessWidget {
                       child: Icon(
                         Icons.favorite,
                         size: 16.sp,
-                        color: Colors.red,
+                        color: AppColors.primary,
                       ),
                     ),
                   ),

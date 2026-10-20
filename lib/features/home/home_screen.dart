@@ -11,7 +11,9 @@ import '../../core/theme/app_theme.dart';
 
 import 'package:provider/provider.dart';
 import 'package:raffi/data/book_repository.dart';
+import 'package:raffi/data/mock_books.dart';
 import 'package:raffi/data/models/book.dart';
+import 'package:raffi/providers/favorites_provider.dart';
 import 'package:raffi/providers/history_provider.dart';
 import 'package:raffi/core/widgets/book_card.dart';
 
@@ -23,6 +25,7 @@ class BookItem {
   final String category;
   final String readingStatus;
   final bool isFavorite;
+  final Book? book;
 
   const BookItem({
     required this.id,
@@ -32,7 +35,19 @@ class BookItem {
     this.category = '',
     this.readingStatus = 'الكل',
     this.isFavorite = false,
+    this.book,
   });
+
+  /// الكتاب الأصلي (للمفضلة)، أو نبنيه من البيانات المتاحة
+  Book toBook() =>
+      book ??
+      Book(
+        id: id,
+        title: title,
+        author: author,
+        coverAsset: image,
+        category: category,
+      );
 
   factory BookItem.fromBook(Book book) => BookItem(
     id: book.id,
@@ -40,6 +55,7 @@ class BookItem {
     title: book.title,
     author: book.author,
     category: book.category,
+    book: book,
   );
 }
 
@@ -58,7 +74,12 @@ class home_screen extends StatefulWidget {
 }
 
 class _home_screenState extends State<home_screen> {
-  final Set<String> favoriteBooks = {};
+  // المفضلة بقت مربوطة بـ FavoritesProvider (نفس مصدر صفحة المفضلة)
+  bool _isFavorite(String id) =>
+      context.read<FavoritesProvider>().isFavorite(id);
+
+  void _toggleFavorite(BookItem item) =>
+      context.read<FavoritesProvider>().toggle(item.toBook());
 
   // أبعاد فريم الكتاب (ثابتة عشان الشكل يفضل ثابت مع أي صورة جاية من الـ API)
   static const double _bookWidth = 105;
@@ -157,7 +178,7 @@ class _home_screenState extends State<home_screen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
         children: _homeSearchResults.map((book) {
-          final isFavorite = favoriteBooks.contains(book.id);
+          final isFavorite = _isFavorite(book.id);
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
@@ -198,18 +219,10 @@ class _home_screenState extends State<home_screen> {
               ),
               trailing: IconButton(
                 tooltip: isFavorite ? 'إزالة من المفضلة' : 'إضافة للمفضلة',
-                onPressed: () {
-                  setState(() {
-                    if (isFavorite) {
-                      favoriteBooks.remove(book.id);
-                    } else {
-                      favoriteBooks.add(book.id);
-                    }
-                  });
-                },
+                onPressed: () => _toggleFavorite(book),
                 icon: Icon(
                   isFavorite ? Icons.favorite : Icons.favorite_border,
-                  color: isFavorite ? Colors.red : Colors.grey,
+                  color: isFavorite ? AppColors.primary : Colors.grey,
                 ),
               ),
               onTap: () => _openBookDetails(book),
@@ -236,9 +249,6 @@ class _home_screenState extends State<home_screen> {
       setState(() {
         state.items = items;
         state.isLoading = false;
-        for (final b in items) {
-          if (b.isFavorite) favoriteBooks.add(b.id);
-        }
       });
     } catch (e) {
       if (!mounted) return;
@@ -251,8 +261,12 @@ class _home_screenState extends State<home_screen> {
 
   Future<void> _loadRecommended() => _load(
     recommended,
-    // نبدأ بتصنيف الروايات، ويمكن تغييره من الفلتر.
-        () => _repo.byCategory('Fiction'),
+    // نفس كلمة البحث بتاعة "عرض الكل" لقسم "قد يعجبك".
+    // لو الـ API رجّع قائمة فاضية نعرض الكتب التجريبية بدل شاشة فاضية.
+    () async {
+      final books = await _repo.search('أدب');
+      return books.isNotEmpty ? books : MockBooks.recommended;
+    },
   );
 
   // "آخر ما تصفحت" بيتحدث لوحده من HistoryProvider، فالسحب للتحديث للـ "قد يعجبك" بس.
@@ -343,60 +357,6 @@ class _home_screenState extends State<home_screen> {
     );
   }
 
-  Widget bookImage(BookItem book) {
-    final bool isFavorite = favoriteBooks.contains(book.id);
-
-    return SizedBox(
-      width: _bookWidth,
-      height: _bookHeight,
-      child: Stack(
-        children: [
-          // الفريم - قابل للضغط
-          Positioned.fill(
-            child: GestureDetector(
-              onTap: () => _openBookDetails(book),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: _bookCover(book.image),
-              ),
-            ),
-          ),
-
-          // زر المفضلة
-          Positioned(
-            top: 4,
-            right: 4,
-            child: Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                padding: EdgeInsets.zero,
-                iconSize: 21,
-                onPressed: () {
-                  setState(() {
-                    if (isFavorite) {
-                      favoriteBooks.remove(book.id);
-                    } else {
-                      favoriteBooks.add(book.id);
-                    }
-                  });
-                },
-                icon: Icon(
-                  isFavorite ? Icons.favorite : Icons.favorite_border,
-                  color: isFavorite ? Colors.red : Colors.grey,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _booksSection(_BooksState state, VoidCallback onRetry) {
     if (state.isLoading) return _booksLoading();
     if (state.error != null) {
@@ -436,15 +396,9 @@ class _home_screenState extends State<home_screen> {
                     title: books[i].title,
                     author: books[i].author,
                     coverAsset: books[i].image,
-                    isFavorite: favoriteBooks.contains(books[i].id),
+                    isFavorite: _isFavorite(books[i].id),
                     onTap: () => _openBookDetails(books[i]),
-                    onFavoriteTap: () {
-                      setState(() {
-                        if (!favoriteBooks.add(books[i].id)) {
-                          favoriteBooks.remove(books[i].id);
-                        }
-                      });
-                    },
+                    onFavoriteTap: () => _toggleFavorite(books[i]),
                   ),
                 ),
               ],
@@ -852,6 +806,8 @@ class _home_screenState extends State<home_screen> {
     // رف "آخر ما تصفحت" بيقرا من HistoryProvider، فبيتحدث لوحده
     // لما أي كتاب يتفتح (نفس مصدر شاشة "عرض الكل").
     final history = context.watch<HistoryProvider>();
+    // بنتابع المفضلة عشان القلوب تتحدث لما تتغير
+    context.watch<FavoritesProvider>();
     recent
       ..isLoading = !history.isInitialized
       ..error = null
