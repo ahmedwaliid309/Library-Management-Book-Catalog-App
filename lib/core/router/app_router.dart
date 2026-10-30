@@ -5,7 +5,7 @@ import '../../features/about/about_screen.dart';
 import '../../features/book_details/book_details_screen.dart';
 import '../../features/favorites/favorites_screen.dart';
 import '../../features/home/home_screen.dart';
-import '../../features/library/library_screen.dart';
+import '../../features/library/library_widgets/library_screen.dart';
 import '../../features/onboarding/onboarding_screen.dart';
 import '../../features/search/search_screen.dart';
 import '../../features/splash/splash_screen.dart';
